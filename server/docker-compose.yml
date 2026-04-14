@@ -1,0 +1,1423 @@
+services:
+  # Infrastructure Services (Phase 0)
+  postgres:
+    build:
+      context: .
+      dockerfile: services/postgres/Dockerfile
+    image: notely/postgres:v3
+    container_name: notely-postgres-v3
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+      # Service-specific database users
+      POSTGRES_AUTH_USER: ${POSTGRES_AUTH_USER}
+      POSTGRES_AUTH_PASSWORD: ${POSTGRES_AUTH_PASSWORD}
+      POSTGRES_USERS_USER: ${POSTGRES_USERS_USER}
+      POSTGRES_USERS_PASSWORD: ${POSTGRES_USERS_PASSWORD}
+      POSTGRES_CALENDAR_USER: ${POSTGRES_CALENDAR_USER}
+      POSTGRES_CALENDAR_PASSWORD: ${POSTGRES_CALENDAR_PASSWORD}
+      POSTGRES_MEETINGS_USER: ${POSTGRES_MEETINGS_USER}
+      POSTGRES_MEETINGS_PASSWORD: ${POSTGRES_MEETINGS_PASSWORD}
+      POSTGRES_TRANSCRIPTS_USER: ${POSTGRES_TRANSCRIPTS_USER}
+      POSTGRES_TRANSCRIPTS_PASSWORD: ${POSTGRES_TRANSCRIPTS_PASSWORD}
+      POSTGRES_NOTES_USER: ${POSTGRES_NOTES_USER}
+      POSTGRES_NOTES_PASSWORD: ${POSTGRES_NOTES_PASSWORD}
+      POSTGRES_SUMMARIES_USER: ${POSTGRES_SUMMARIES_USER}
+      POSTGRES_SUMMARIES_PASSWORD: ${POSTGRES_SUMMARIES_PASSWORD}
+      POSTGRES_ADMIN_SERVICE_USER: ${POSTGRES_ADMIN_SERVICE_USER}
+      POSTGRES_ADMIN_SERVICE_PASSWORD: ${POSTGRES_ADMIN_SERVICE_PASSWORD}
+      POSTGRES_ACTIONS_USER: ${POSTGRES_ACTIONS_USER}
+      POSTGRES_ACTIONS_PASSWORD: ${POSTGRES_ACTIONS_PASSWORD}
+      POSTGRES_PORTAL_USER: ${POSTGRES_PORTAL_USER}
+      POSTGRES_PORTAL_PASSWORD: ${POSTGRES_PORTAL_PASSWORD}
+      POSTGRES_EMAIL_USER: ${POSTGRES_EMAIL_USER}
+      POSTGRES_EMAIL_PASSWORD: ${POSTGRES_EMAIL_PASSWORD}
+    ports:
+      - "127.0.0.1:5432:5432"  # Only accessible from localhost, not the internet
+    volumes:
+      - postgres-v3-data:/var/lib/postgresql/data
+    networks:
+      - notely-v3-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: notely-redis-v3
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "127.0.0.1:6379:6379"  # Localhost only
+    volumes:
+      - redis-v3-data:/data
+    networks:
+      - notely-v3-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: notely-rabbitmq-v3
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST}
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
+    ports:
+      - "127.0.0.1:${RABBITMQ_PORT:-5672}:5672"
+      - "127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq-v3-data:/var/lib/rabbitmq
+    networks:
+      - notely-v3-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  flyway:
+    image: flyway/flyway:10.15.0
+    container_name: notely-flyway-v3
+    command: -connectRetries=60 -locations=filesystem:/flyway/sql migrate
+    volumes:
+      - ./ops/migrations:/flyway/sql
+    restart: "no"
+    environment:
+      - FLYWAY_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      - FLYWAY_USER=${POSTGRES_USER}
+      - FLYWAY_PASSWORD=${POSTGRES_PASSWORD}
+      - FLYWAY_SCHEMAS=global_auth,user_profiles,user_portal_settings,admin_settings,client_sync,calendar,meetings,transcripts,notes,summaries,actions,licensing,support,email
+      - FLYWAY_DEFAULT_SCHEMA=public
+      - FLYWAY_CLEAN_DISABLED=true
+      - FLYWAY_PLACEHOLDERS_AUTH_USER=${POSTGRES_AUTH_USER}
+      - FLYWAY_PLACEHOLDERS_AUTH_PASSWORD=${POSTGRES_AUTH_PASSWORD}
+      - FLYWAY_PLACEHOLDERS_USERS_USER=${POSTGRES_USERS_USER}
+      - FLYWAY_PLACEHOLDERS_USERS_PASSWORD=${POSTGRES_USERS_PASSWORD}
+      - FLYWAY_PLACEHOLDERS_CALENDAR_USER=${POSTGRES_CALENDAR_USER}
+      - FLYWAY_PLACEHOLDERS_CALENDAR_PASSWORD=${POSTGRES_CALENDAR_PASSWORD}
+      - FLYWAY_PLACEHOLDERS_MEETINGS_USER=${POSTGRES_MEETINGS_USER}
+      - FLYWAY_PLACEHOLDERS_MEETINGS_PASSWORD=${POSTGRES_MEETINGS_PASSWORD}
+      - FLYWAY_PLACEHOLDERS_TRANSCRIPTS_USER=${POSTGRES_TRANSCRIPTS_USER}
+      - FLYWAY_PLACEHOLDERS_TRANSCRIPTS_PASSWORD=${POSTGRES_TRANSCRIPTS_PASSWORD}
+      - FLYWAY_PLACEHOLDERS_NOTES_USER=${POSTGRES_NOTES_USER}
+      - FLYWAY_PLACEHOLDERS_NOTES_PASSWORD=${POSTGRES_NOTES_PASSWORD}
+      - FLYWAY_PLACEHOLDERS_SUMMARIES_USER=${POSTGRES_SUMMARIES_USER}
+      - FLYWAY_PLACEHOLDERS_SUMMARIES_PASSWORD=${POSTGRES_SUMMARIES_PASSWORD}
+      - FLYWAY_PLACEHOLDERS_ADMIN_SERVICE_USER=${POSTGRES_ADMIN_SERVICE_USER}
+      - FLYWAY_PLACEHOLDERS_ADMIN_SERVICE_PASSWORD=${POSTGRES_ADMIN_SERVICE_PASSWORD}
+      - FLYWAY_PLACEHOLDERS_ADMIN_DATABASE_USER=${POSTGRES_ADMIN_DATABASE_USER}
+      - FLYWAY_PLACEHOLDERS_ADMIN_DATABASE_PASSWORD=${POSTGRES_ADMIN_DATABASE_PASSWORD}
+      - FLYWAY_PLACEHOLDERS_ACTIONS_USER=${POSTGRES_ACTIONS_USER}
+      - FLYWAY_PLACEHOLDERS_ACTIONS_PASSWORD=${POSTGRES_ACTIONS_PASSWORD}
+      - FLYWAY_PLACEHOLDERS_PORTAL_USER=${POSTGRES_PORTAL_USER}
+      - FLYWAY_PLACEHOLDERS_PORTAL_PASSWORD=${POSTGRES_PORTAL_PASSWORD}
+      - FLYWAY_PLACEHOLDERS_SUPPORT_USER=${POSTGRES_SUPPORT_USER}
+      - FLYWAY_PLACEHOLDERS_SUPPORT_PASSWORD=${POSTGRES_SUPPORT_PASSWORD}
+      - FLYWAY_PLACEHOLDERS_EMAIL_USER=${POSTGRES_EMAIL_USER}
+      - FLYWAY_PLACEHOLDERS_EMAIL_PASSWORD=${POSTGRES_EMAIL_PASSWORD}
+    networks:
+      - notely-v3-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    image: notely/gateway:v3
+    container_name: notely-gateway-v3
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      GATEWAY_PORT: 3200
+      SERVICE_NAME: gateway
+      AUTH_SERVICE_URL: http://auth:3201
+      USERS_SERVICE_URL: http://users:3202
+      CALENDAR_SERVICE_URL: http://calendar:3203
+      PORTAL_SERVICE_URL: http://portal:3204
+      # MEETINGS_SERVICE_URL: http://meetings:3213      # Service not yet implemented
+      # TRANSCRIPTS_SERVICE_URL: http://transcripts:3212  # Service not yet implemented
+      ADMIN_CONFIG_SERVICE_URL: http://admin-config:3206
+      ADMIN_DATABASE_SERVICE_URL: http://admin-database:3208
+      DOCKER_MANAGER_SERVICE_URL: http://docker-manager:8005
+      LOGS_SERVICE_URL: ${LOGS_SERVICE_URL:-http://logs:3210}
+      PORTAL_BFF_SERVICE_URL: http://portal-bff:3215
+      SYNC_SERVICE_URL: http://sync:3205
+      LICENSE_SERVICE_URL: http://license:3211
+      SUMMARIES_SERVICE_URL: http://summaries:3207
+      SUPPORT_SERVICE_URL: http://support:3209
+      EMAIL_SERVICE_URL: http://email:3214
+      AUTH_ENABLE_OIDC_PROVIDER: ${AUTH_ENABLE_OIDC_PROVIDER}
+      AUTH_ENABLE_DESKTOP_OAUTH: ${AUTH_ENABLE_DESKTOP_OAUTH}
+      LOG_LEVEL: ${LOG_LEVEL}
+      # Service-to-service authentication
+      GATEWAY_SERVICE_API_KEY: ${GATEWAY_SERVICE_API_KEY}
+      # Redis for distributed rate limiting
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      # Token validation cache size (LRU cache to prevent memory exhaustion)
+      TOKEN_CACHE_MAX_SIZE: 100000
+      # Rate limit whitelist (comma-separated IPs for security scanning)
+      RATE_LIMIT_WHITELIST_IPS: ${RATE_LIMIT_WHITELIST_IPS:-}
+    ports:
+      - "127.0.0.1:${API_PORT}:3200"
+    volumes:
+      - ./services/gateway:/app
+      - ./packages:/packages  # Provide shared packages for file dependencies
+    networks:
+      - notely-v3-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      admin-config:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3200/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  sync:
+    build:
+      context: .
+      dockerfile: services/sync/Dockerfile
+    image: notely/sync:v3
+    container_name: notely-sync-v3
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      SYNC_SERVICE_PORT: 3205
+      SERVICE_NAME: sync
+      SYNC_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+      SYNC_DEVICE_QUOTA: ${SYNC_DEVICE_QUOTA:-5}
+      SYNC_ADMIN_API_KEY: ${SYNC_ADMIN_API_KEY}
+      # Redis for real-time sync notifications
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command: npm run dev
+    ports:
+      - "127.0.0.1:${SYNC_PORT:-3205}:3205"
+    volumes:
+      - ./services/sync:/app
+      - ./packages:/packages
+    networks:
+      - notely-v3-network
+    depends_on:
+      auth:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3205/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Nginx Reverse Proxy
+  nginx:
+    build:
+      context: .
+      dockerfile: services/nginx/Dockerfile
+    image: notely/nginx:v3
+    container_name: notely-nginx-v3
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"     # HTTP (external:internal) - configurable via --dev/--staging/--production
+      - "${NGINX_HTTPS_PORT:-443}:443"  # HTTPS (external:internal) - configurable via --dev/--staging/--production
+    environment:
+      # Domain configuration for nginx templates
+      # These are substituted into /etc/nginx/templates/*.template files
+      # Values come from .env generated by configure-domains.sh
+      BASE_DOMAIN: ${BASE_DOMAIN}
+      API_DOMAIN: ${API_DOMAIN}
+      PORTAL_DOMAIN: ${PORTAL_DOMAIN}
+      WS_DOMAIN: ${WS_DOMAIN}
+      GET_DOMAIN: ${GET_DOMAIN}
+      DOCS_DOMAIN: ${DOCS_DOMAIN}
+      URL_PORT_SUFFIX: ${URL_PORT_SUFFIX}
+      # CrowdSec bouncer configuration
+      # CROWDSEC_BOUNCER_API_KEY must be generated with: docker exec notely-crowdsec-v3 cscli bouncers add nginx-bouncer
+      CROWDSEC_LAPI_URL: http://crowdsec:8080
+      CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_API_KEY:-}
+      # Signed download URL validation
+      RELEASES_SIGNING_KEY: ${RELEASES_SIGNING_KEY}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # Note: conf.d is NOT mounted - templates generate configs at startup
+      - ./services/nginx/ssl/certs:/etc/nginx/ssl/certs:ro
+      - ./services/nginx/ssl/private:/etc/nginx/ssl/private:ro
+      # Dynamic config directory - mounted as directory (not single file) for reliable bind mount sync
+      - ./services/nginx/dynamic:/etc/nginx/dynamic:ro
+      # Optional: mount a local webroot for serving /get.yourdomain.com release artifacts.
+      # Set WEBROOT_PATH in your .env to enable. Leave unset for a standard install.
+      - ${WEBROOT_PATH:-./services/nginx/empty-webroot}:/var/www/website:ro
+      - ${WEBROOT_RELEASES_PATH:-./services/nginx/empty-releases}:/var/www/website/get.yourdomain.com/releases:rw
+      # Nginx logs shared with CrowdSec for intrusion detection
+      - nginx-logs:/usr/local/openresty/nginx/logs
+    networks:
+      notely-v3-network:
+        ipv4_address: 172.18.0.100
+    depends_on:
+      gateway:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      portal:
+        condition: service_started
+      ws-gateway:
+        condition: service_healthy
+      crowdsec:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Phase 1: Auth Service (Authentication & JWT)
+  auth:
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
+    image: notely/auth:v3
+    container_name: notely-auth-v3
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      AUTH_PORT: 3201
+      SERVICE_NAME: auth
+      DB_HOST: postgres  # Local V3 PostgreSQL
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_AUTH_USER}
+      DB_PASSWORD: ${POSTGRES_AUTH_PASSWORD}
+      REDIS_HOST: redis  # Local V3 Redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+      JWT_KEY_ID: ${JWT_KEY_ID}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      ADMIN_CONFIG_SERVICE_URL: http://admin-config:3206
+      SYNC_SERVICE_URL: http://sync:3205
+      SUPPORT_SERVICE_URL: ${SUPPORT_SERVICE_URL}
+      LICENSE_SERVICE_URL: ${LICENSE_SERVICE_URL}
+      # OIDC and OAuth Configuration
+      AUTH_ENABLE_OIDC_PROVIDER: ${AUTH_ENABLE_OIDC_PROVIDER}
+      AUTH_ENABLE_DESKTOP_OAUTH: ${AUTH_ENABLE_DESKTOP_OAUTH}
+      AUTH_OIDC_ISSUER_URL: ${OIDC_AUTHORITY_URL}
+      # OIDC Portal Client
+      AUTH_OIDC_PORTAL_CLIENT_ID: ${AUTH_OIDC_PORTAL_CLIENT_ID}
+      AUTH_OIDC_PORTAL_CLIENT_SECRET: ${AUTH_OIDC_PORTAL_CLIENT_SECRET}
+      AUTH_OIDC_PORTAL_REDIRECT_URIS: ${OIDC_PORTAL_REDIRECT_URI}
+      # Microsoft OAuth
+      MICROSOFT_CLIENT_ID: ${MICROSOFT_CLIENT_ID}
+      MICROSOFT_CLIENT_SECRET: ${MICROSOFT_CLIENT_SECRET}
+      MICROSOFT_TENANT: ${MICROSOFT_TENANT}
+      OAUTH_MICROSOFT_AUTH_CALLBACK_URL: ${OAUTH_MICROSOFT_AUTH_CALLBACK_URL}
+      # Portal domain and URL for OAuth redirects (from generated .env)
+      PORTAL_DOMAIN: ${PORTAL_DOMAIN}
+      PORTAL_URL: ${PORTAL_URL}
+      LOG_LEVEL: ${LOG_LEVEL}
+      RATE_LIMIT_WHITELIST_IPS: ${RATE_LIMIT_WHITELIST_IPS:-}
+    ports:
+      - "127.0.0.1:${AUTH_PORT}:3201"
+    volumes:
+      - ./services/auth:/app
+      - ./packages:/packages  # Provide shared packages for file dependencies
+    networks:
+      - notely-v3-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+      admin-config:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3201/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  users:
+    build:
+      context: .
+      dockerfile: services/users/Dockerfile
+    image: notely/users:v3
+    container_name: notely-users-v3
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      USERS_PORT: 3202
+      SERVICE_NAME: users
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USERS_USER}
+      DB_PASSWORD: ${POSTGRES_USERS_PASSWORD}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      LOG_LEVEL: ${LOG_LEVEL}
+      MAIL_APP_CLIENT_ID: ${MAIL_APP_CLIENT_ID}
+      MAIL_APP_CLIENT_SECRET: ${MAIL_APP_CLIENT_SECRET}
+      MAIL_TENANT_ID: ${MAIL_TENANT_ID}
+      MICROSOFT_SENDER_EMAIL: ${MICROSOFT_SENDER_EMAIL}
+      EMAIL_FROM: ${EMAIL_FROM}
+    ports:
+      - "127.0.0.1:${USERS_PORT:-3202}:3202"
+    # Development volume mounts disabled - use docker compose build/up to apply code changes
+    # Uncomment for hot reload during active development (requires local npm install):
+    # volumes:
+    #   - ./services/users:/app
+    #   - ./packages:/packages
+    networks:
+      - notely-v3-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+      admin-config:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3202/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  calendar:
+    build:
+      context: .
+      dockerfile: services/calendar/Dockerfile
+    image: notely/calendar:v3
+    container_name: notely-calendar-v3
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      CALENDAR_PORT: 3203
+      SERVICE_NAME: calendar
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_CALENDAR_USER}
+      DB_PASSWORD: ${POSTGRES_CALENDAR_PASSWORD}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+      AUTH_SERVICE_URL: http://auth:3201
+      LOG_LEVEL: ${LOG_LEVEL}
+      # Microsoft OAuth for Outlook Calendar
+      MICROSOFT_CLIENT_ID: ${MICROSOFT_CLIENT_ID}
+      MICROSOFT_CLIENT_SECRET: ${MICROSOFT_CLIENT_SECRET}
+      MICROSOFT_TENANT_ID: ${MICROSOFT_TENANT}
+      MICROSOFT_REDIRECT_URI: ${OAUTH_MICROSOFT_OUTLOOK_CALLBACK_URL}
+      API_BASE_URL: ${API_BASE_URL}
+      PORTAL_URL: ${PORTAL_URL}
+      # CORS is handled at nginx edge layer - no application-level config needed
+    ports:
+      - "127.0.0.1:${CALENDAR_PORT:-3203}:3203"
+    networks:
+      - notely-v3-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+      auth:
+        condition: service_healthy
+      admin-config:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3203/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  admin-config:
+    build:
+      context: .
+      dockerfile: services/admin-config/Dockerfile
+    image: notely/admin-config:v3
+    container_name: notely-admin-config-v3
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      ADMIN_CONFIG_PORT: 3206
+      SERVICE_NAME: admin-config
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_ADMIN_SERVICE_USER}
+      DB_PASSWORD: ${POSTGRES_ADMIN_SERVICE_PASSWORD}
+      LOG_LEVEL: ${LOG_LEVEL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      DOCKER_MANAGER_SERVICE_URL: http://docker-manager:8005
+    ports:
+      - "127.0.0.1:${ADMIN_CONFIG_PORT:-3206}:3206"
+    volumes:
+      # Dynamic nginx config directory - mounted as directory for reliable bind mount sync
+      - ./services/nginx/dynamic:/workspace/nginx-dynamic
+    networks:
+      - notely-v3-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3206/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+  admin-database:
+    build:
+      context: .
+      dockerfile: services/admin-database/Dockerfile
+    image: notely/admin-database:v3
+    container_name: notely-admin-database-v3
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      ADMIN_DATABASE_PORT: 3208
+      SERVICE_NAME: admin-database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_ADMIN_DATABASE_USER}
+      DB_PASSWORD: ${POSTGRES_ADMIN_DATABASE_PASSWORD}
+      # Elevated credentials for full-fidelity backups (pg_dump requires access
+      # across schemas/users). Safe to limit usage to backup tasks only.
+      BACKUP_DB_HOST: postgres
+      BACKUP_DB_PORT: 5432
+      BACKUP_DB_NAME: ${POSTGRES_DB}
+      BACKUP_DB_USER: ${POSTGRES_USER}
+      BACKUP_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      ADMIN_DATABASE_ALLOWED_SCHEMAS: ${ADMIN_DATABASE_ALLOWED_SCHEMAS:-auth,users,calendar,meetings,transcripts,notes,summaries,admin,actions,portal}
+      BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY}
+      LOG_LEVEL: ${LOG_LEVEL}
+    volumes:
+      # Persist backups to the host in server/database-backups
+      - ./database-backups:/workspace/database-backups
+    ports:
+      - "127.0.0.1:${ADMIN_DATABASE_PORT:-3208}:3208"
+    networks:
+      - notely-v3-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3208/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+  portal-bff:
+    build:
+      context: .
+      dockerfile: services/portal-bff/Dockerfile
+    image: notely/portal-bff:v3
+    container_name: notely-portal-bff-v3
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      SERVICE_NAME: portal-bff
+      PORTAL_BFF_PORT: 3215
+      GATEWAY_INTERNAL_URL: http://gateway:3200/api
+      AUTH_SERVICE_URL: http://auth:3201
+      USERS_SERVICE_URL: http://users:3202
+      ADMIN_CONFIG_SERVICE_URL: http://admin-config:3206
+      SYNC_SERVICE_URL: http://sync:3205
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      RELEASES_UPLOAD_DIR: /workspace/releases
+      GET_BASE_URL: https://${GET_DOMAIN}${URL_PORT_SUFFIX}
+      # Internal API key for CI/CD release sync
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      # Signed download URL generation
+      RELEASES_SIGNING_KEY: ${RELEASES_SIGNING_KEY}
+    ports:
+      - "127.0.0.1:${PORTAL_BFF_PORT:-3215}:3215"
+    volumes:
+      - ./services/portal-bff:/app
+      - ./packages:/packages
+      - ${WEBROOT_RELEASES_PATH:-./services/nginx/empty-releases}:/workspace/releases:rw
+    networks:
+      - notely-v3-network
+    depends_on:
+      gateway:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3215/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+  ws-gateway:
+    build:
+      context: .
+      dockerfile: services/ws-gateway/Dockerfile
+    image: notely/ws-gateway:v3
+    container_name: notely-ws-gateway-v3
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      WS_GATEWAY_PORT: ${WS_GATEWAY_PORT}
+      SERVICE_NAME: ws-gateway
+      AUTH_SERVICE_URL: http://auth:3201
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      WS_HEARTBEAT_INTERVAL_MS: ${WS_HEARTBEAT_INTERVAL_MS}
+      WS_MAX_CONNECTIONS_PER_USER: ${WS_MAX_CONNECTIONS_PER_USER}
+      LOG_LEVEL: ${LOG_LEVEL}
+    ports:
+      - "127.0.0.1:${WS_GATEWAY_PORT}:${WS_GATEWAY_PORT}"
+    networks:
+      - notely-v3-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3217/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  license:
+    build:
+      context: .
+      dockerfile: services/license/Dockerfile
+    image: notely/license:v3
+    container_name: notely-license-v3
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      LICENSE_SERVICE_PORT: 3211
+      SERVICE_NAME: license
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+      LOG_LEVEL: ${LOG_LEVEL}
+      # Portal configuration (for URLs shown in emails etc.)
+      PORTAL_DOMAIN: ${PORTAL_DOMAIN}
+      PORTAL_PORT: ${PORTAL_PORT}
+      PORTAL_URL: ${PORTAL_URL}
+      # Support service for beta signup conversion notifications
+      SUPPORT_SERVICE_URL: http://support:3209
+    ports:
+      - "127.0.0.1:3211:3211"
+    volumes:
+      - ./services/license/config/keys:/app/config/keys:ro
+    networks:
+      - notely-v3-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3211/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  summaries:
+    build:
+      context: .
+      dockerfile: services/summaries/Dockerfile
+    image: notely/summaries:v3
+    container_name: notely-summaries-v3
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      SUMMARIES_SERVICE_PORT: 3207
+      SERVICE_NAME: summaries
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+      LLM_GATEWAY_URL: ${LLM_GATEWAY_URL}
+      LICENSE_SERVICE_URL: ${LICENSE_SERVICE_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      LOG_LEVEL: ${LOG_LEVEL}
+    command: npm run dev
+    ports:
+      - "127.0.0.1:${SUMMARIES_PORT:-3207}:3207"
+    volumes:
+      - ./services/summaries:/workspace/services/summaries
+      - ./packages:/workspace/packages
+    networks:
+      - notely-v3-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+      license:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3207/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  support:
+    build:
+      context: .
+      dockerfile: services/support/Dockerfile
+    image: notely/support:v3
+    container_name: notely-support-v3
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      SUPPORT_PORT: 3209
+      SERVICE_NAME: support
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_SUPPORT_USER}
+      DB_PASSWORD: ${POSTGRES_SUPPORT_PASSWORD}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      LOG_LEVEL: ${LOG_LEVEL}
+      # Email integration (optional - for future email intake)
+      SUPPORT_EMAIL_HOST: ${SUPPORT_EMAIL_HOST:-}
+      SUPPORT_EMAIL_PORT: ${SUPPORT_EMAIL_PORT:-993}
+      SUPPORT_EMAIL_USER: ${SUPPORT_EMAIL_USER:-}
+      SUPPORT_EMAIL_PASSWORD: ${SUPPORT_EMAIL_PASSWORD:-}
+      SUPPORT_EMAIL_POLL_INTERVAL: ${SUPPORT_EMAIL_POLL_INTERVAL:-60000}
+      # Microsoft Graph email configuration for sending beta emails
+      MAIL_APP_CLIENT_ID: ${MAIL_APP_CLIENT_ID}
+      MAIL_APP_CLIENT_SECRET: ${MAIL_APP_CLIENT_SECRET}
+      MAIL_TENANT_ID: ${MAIL_TENANT_ID}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@example.com}
+      BETA_ADMIN_EMAIL: ${BETA_ADMIN_EMAIL:?BETA_ADMIN_EMAIL must be set}
+      # Portal URL for beta invitation links (includes port in dev mode)
+      PORTAL_URL: ${PORTAL_URL}
+      # Get URL for magic link email verification (includes port in dev mode)
+      GET_URL: ${GET_URL}
+      # License service for granting beta licenses
+      LICENSE_SERVICE_URL: ${LICENSE_SERVICE_URL}
+      # Auth service for admin user creation during beta conversion
+      AUTH_SERVICE_URL: http://auth:3201
+      # Google reCAPTCHA for contact form
+      RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY}
+      # ClamAV for diagnostics upload scanning
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: 3310
+      # Diagnostics analysis service (host-side)
+      ANALYSIS_SERVICE_URL: ${ANALYSIS_SERVICE_URL:-http://host.docker.internal:3250}
+      ANALYSIS_SERVICE_API_KEY: ${ANALYSIS_SERVICE_API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./services/support/uploads:/workspace/services/support/uploads
+    ports:
+      - "127.0.0.1:${SUPPORT_PORT:-3209}:3209"
+    networks:
+      - notely-v3-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+      admin-config:
+        condition: service_healthy
+      clamav:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3209/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  clamav:
+    image: clamav/clamav:1.4
+    container_name: notely-clamav-v3
+    restart: unless-stopped
+    volumes:
+      - clamav-v3-data:/var/lib/clamav
+    networks:
+      - notely-v3-network
+    healthcheck:
+      test: ["CMD", "clamdscan", "--ping", "3"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  email:
+    build:
+      context: .
+      dockerfile: services/email/Dockerfile
+    image: notely/email:v3
+    container_name: notely-email-v3
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      EMAIL_PORT: 3214
+      SERVICE_NAME: email
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_EMAIL_USER}
+      DB_PASSWORD: ${POSTGRES_EMAIL_PASSWORD}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      LOG_LEVEL: ${LOG_LEVEL}
+      MAIL_APP_CLIENT_ID: ${MAIL_APP_CLIENT_ID}
+      MAIL_APP_CLIENT_SECRET: ${MAIL_APP_CLIENT_SECRET}
+      MAIL_TENANT_ID: ${MAIL_TENANT_ID}
+      MICROSOFT_SENDER_EMAIL: ${MICROSOFT_SENDER_EMAIL}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@example.com}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-Notely}
+      ADMIN_CONFIG_SERVICE_URL: http://admin-config:3206
+    ports:
+      - "127.0.0.1:${EMAIL_PORT:-3214}:3214"
+    networks:
+      - notely-v3-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3214/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  logs:
+    build:
+      context: .
+      dockerfile: services/observability/Dockerfile
+    image: notely/logs:v3
+    container_name: notely-logs-v3
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      LOGS_PORT: ${LOGS_PORT:-3210}
+      SERVICE_NAME: logs
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_ADMIN_SERVICE_USER}
+      DB_PASSWORD: ${POSTGRES_ADMIN_SERVICE_PASSWORD}
+      LOKI_BASE_URL: http://loki:3100
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      LOG_LEVEL: ${LOG_LEVEL}
+    ports:
+      - "127.0.0.1:${LOGS_PORT:-3210}:3210"
+    networks:
+      - notely-v3-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+      loki:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3210/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # Portal Service - Next.js Web UI
+  portal:
+    build:
+      context: .
+      dockerfile: services/portal/Dockerfile
+      args:
+        - NEXT_PUBLIC_GRAFANA_URL=${NEXT_PUBLIC_GRAFANA_URL}
+    image: notely/portal:v3
+    container_name: notely-portal-v3
+    env_file:
+      - config/base.env
+      - .env
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORTAL_PORT: 3204
+      SERVICE_NAME: portal
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_PORTAL_USER}
+      DB_PASSWORD: ${POSTGRES_PORTAL_PASSWORD}
+      NEXT_PUBLIC_API_URL: /api
+      API_BASE_URL: http://gateway:3200
+      CALENDAR_SERVICE_BASE_URL: http://calendar:3203
+      SERVICE_GATEWAY_URL: http://gateway:3200
+      SERVICE_AUTH_URL: http://auth:3201
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      LOG_LEVEL: ${LOG_LEVEL}
+      # Grafana URL for Observatory page (accessed via nginx proxy)
+      NEXT_PUBLIC_GRAFANA_URL: ${NEXT_PUBLIC_GRAFANA_URL}
+    ports:
+      - "127.0.0.1:${PORTAL_PORT}:3204"
+    # No volumes - using production build from Dockerfile
+    networks:
+      - notely-v3-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+      auth:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"const http = require('http'); const req = http.get('http://portal:3204/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)); req.on('error', () => process.exit(1));\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Infrastructure: LLM Worker (llama.cpp) - GPU-enabled
+  llm-worker:
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda
+    container_name: notely-llm-worker-v3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      # NVIDIA GPU configuration
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+    volumes:
+      - ./infrastructure/llm-shared/models:/app/models:ro
+    ports:
+      - "127.0.0.1:${LLM_WORKER_PORT:-8100}:8000"
+    command: [
+      "-m", "/app/models/Qwen2.5-14B-Instruct-GGUF/qwen2.5-14b-instruct-q4_k_m-00001-of-00003.gguf",
+      "--host", "0.0.0.0",
+      "--port", "8000",
+      "-ngl", "99",
+      "-c", "4096"
+    ]
+    networks:
+      - notely-v3-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 15s
+      start_period: 120s
+      retries: 3
+
+  # Infrastructure: LLM Gateway (API orchestration layer)
+  llm-gateway:
+    build:
+      context: ./infrastructure/llm-gateway
+      dockerfile: Dockerfile
+    image: notely/llm-gateway:v3
+    container_name: notely-llm-gateway-v3
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      LLM_ROLE: api
+      LLM_BACKEND_URL: http://llm-worker:8000
+      MAX_INPUT_LENGTH: ${MAX_INPUT_LENGTH:-15000}
+      MAX_OUTPUT_LENGTH: ${MAX_OUTPUT_LENGTH:-1000}
+      CACHE_RESULTS: ${CACHE_RESULTS:-true}
+      SYNC_ANALYZE_TIMEOUT: ${SYNC_ANALYZE_TIMEOUT:-120}
+      PROMPT_DIR: /app/prompt
+    volumes:
+      - ./infrastructure/llm-shared/models:/app/models:ro
+      - ./infrastructure/llm-shared/prompt:/app/prompt:ro
+    ports:
+      - "127.0.0.1:${LLM_GATEWAY_PORT:-8002}:8002"
+    depends_on:
+      redis:
+        condition: service_healthy
+      llm-worker:
+        condition: service_started
+    networks:
+      - notely-v3-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: notely-loki-v3
+    command: ["-config.file=/etc/loki/config.yml", "-config.expand-env=true"]
+    environment:
+      - LOKI_RETENTION_DAYS=${LOKI_RETENTION_DAYS:-7}
+    volumes:
+      - ./ops/observability/loki/config.yml:/etc/loki/config.yml:ro
+      - loki-v3-data:/loki
+    ports:
+      - "127.0.0.1:3101:3100"
+    networks:
+      - notely-v3-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3100/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: notely-promtail-v3
+    command: ["-config.file=/etc/promtail/config.yml", "-config.expand-env=true"]
+    volumes:
+      - ./ops/observability/promtail/config.yml:/etc/promtail/config.yml:ro
+      - promtail-v3-positions:/var/lib/promtail
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Host system logs
+      - /var/log/nginx:/var/log/nginx:ro
+      - /var/log/syslog:/var/log/syslog:ro
+      - /var/log/auth.log:/var/log/auth.log:ro
+      - /var/log/kern.log:/var/log/kern.log:ro
+    environment:
+      - PROMTAIL_ENVIRONMENT=${NODE_ENV:-development}
+    depends_on:
+      - loki
+    networks:
+      - notely-v3-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /var/lib/promtail/positions.yaml"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  grafana:
+    image: grafana/grafana:10.3.1
+    container_name: notely-grafana-v3
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set}
+      # ROOT_URL with /grafana sub-path - Grafana handles full /grafana/* paths
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3130}/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana-v3-data:/var/lib/grafana
+      - ./ops/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./ops/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:3130:3000"
+    depends_on:
+      - loki
+      - prometheus
+    networks:
+      - notely-v3-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:v2.49.1
+    container_name: notely-prometheus-v3
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./ops/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-v3-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    depends_on:
+      - gateway
+      - auth
+    networks:
+      - notely-v3-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # System Monitoring: Node Exporter (CPU, RAM, Disk, Network)
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: notely-node-exporter-v3
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+      - "--collector.textfile.directory=/etc/node-exporter/"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+      - /run/udev/data:/run/udev/data:ro
+      - /var/lib/node-exporter:/etc/node-exporter:ro
+    ports:
+      - "127.0.0.1:9100:9100"
+    networks:
+      - notely-v3-network
+    restart: unless-stopped
+    pid: host
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # Container Monitoring: cAdvisor (Docker container metrics)
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    container_name: notely-cadvisor-v3
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "127.0.0.1:9180:8080"
+    networks:
+      - notely-v3-network
+    restart: unless-stopped
+    devices:
+      - /dev/kmsg:/dev/kmsg
+
+  # Nginx Metrics Exporter
+  # Note: No healthcheck - scratch image with no shell, Prometheus will detect failures
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:1.1.0
+    container_name: notely-nginx-exporter-v3
+    command:
+      - "-nginx.scrape-uri=http://nginx:80/nginx_status"
+    depends_on:
+      - nginx
+    ports:
+      - "127.0.0.1:9113:9113"
+    networks:
+      - notely-v3-network
+    restart: unless-stopped
+
+  # PostgreSQL Metrics Exporter
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: notely-postgres-exporter-v3
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+    ports:
+      - "127.0.0.1:9187:9187"
+    networks:
+      - notely-v3-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9187/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # Redis Metrics Exporter
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.58.0
+    container_name: notely-redis-exporter-v3
+    environment:
+      REDIS_ADDR: "redis://redis:6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - "127.0.0.1:9121:9121"
+    networks:
+      - notely-v3-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    # Healthcheck removed: minimal scratch image has no wget/curl
+    # Health monitored via Prometheus scraping /metrics endpoint
+
+  # NVIDIA GPU Metrics Exporter (DCGM)
+  dcgm-exporter:
+    image: nvidia/dcgm-exporter:3.3.5-3.4.0-ubuntu22.04
+    container_name: notely-dcgm-exporter-v3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      - DCGM_EXPORTER_LISTEN=:9400
+      - DCGM_EXPORTER_KUBERNETES=false
+    ports:
+      - "127.0.0.1:9400:9400"
+    networks:
+      - notely-v3-network
+    restart: unless-stopped
+    cap_add:
+      - SYS_ADMIN
+    # Healthcheck removed: image has no wget/curl available
+    # Health monitored via Prometheus scraping /metrics endpoint
+
+  # Security: CrowdSec IPS (Intrusion Prevention System)
+  crowdsec:
+    image: crowdsecurity/crowdsec:latest
+    container_name: notely-crowdsec-v3
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    environment:
+      # Enable nginx and HTTP CVE collections
+      - COLLECTIONS=crowdsecurity/nginx crowdsecurity/http-cve crowdsecurity/base-http-scenarios
+      - GID=${GID:-1000}
+      # Disable online API during initial setup (optional)
+      - DISABLE_ONLINE_API=false
+    volumes:
+      # CrowdSec configuration
+      - ./services/crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml:ro
+      - crowdsec-v3-config:/etc/crowdsec/
+      - crowdsec-v3-data:/var/lib/crowdsec/data/
+      # Docker socket for log collection
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Nginx logs (shared volume from nginx container)
+      - nginx-logs:/var/log/nginx:ro
+    networks:
+      notely-v3-network:
+        ipv4_address: 172.18.0.101
+    ports:
+      - "127.0.0.1:8080:8080"  # Local API (not exposed to internet)
+    healthcheck:
+      test: ["CMD", "cscli", "version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Watchtower: Auto-update CrowdSec container
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: notely-watchtower-v3
+    restart: unless-stopped
+    environment:
+      # Only update containers with the watchtower.enable=true label
+      WATCHTOWER_LABEL_ENABLE: "true"
+      # Check for updates daily at 4 AM
+      WATCHTOWER_SCHEDULE: "0 0 4 * * *"
+      # Clean up old images after update
+      WATCHTOWER_CLEANUP: "true"
+      # Log level
+      WATCHTOWER_DEBUG: "false"
+      # Timeout for stopping containers
+      WATCHTOWER_TIMEOUT: "60s"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - notely-v3-network
+    healthcheck:
+      test: ["CMD", "/watchtower", "--health-check"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Docker Socket Proxy (security layer for Docker API access)
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:0.1
+    container_name: notely-docker-proxy-v3
+    environment:
+      # Read-only access for monitoring
+      CONTAINERS: 1
+      CONTAINERS_LOGS: 1
+      EVENTS: 1
+      INFO: 1
+      PING: 1
+      VERSION: 1
+      IMAGES: 1
+      VOLUMES: 1
+      # Write access for container management (limited)
+      POST: 1
+      CONTAINERS_START: 1
+      CONTAINERS_STOP: 1
+      CONTAINERS_RESTART: 1
+      # Explicitly disable dangerous operations
+      AUTH: 0
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      CONTAINERS_CREATE: 0
+      CONTAINERS_DELETE: 0
+      CONTAINERS_EXEC: 1  # Required for graceful nginx reload (nginx -s reload)
+      CONTAINERS_PRUNE: 0
+      DISTRIBUTION: 0
+      EXEC: 1  # Required for graceful nginx reload (nginx -s reload)
+      GRPC: 0
+      IMAGES_DELETE: 0
+      NETWORKS: 0
+      NODES: 0
+      PLUGINS: 0
+      SECRETS: 0
+      SERVICES: 0
+      SESSION: 0
+      SWARM: 0
+      SYSTEM: 0
+      TASKS: 0
+      VOLUMES_DELETE: 0
+      VOLUMES_PRUNE: 0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - notely-v3-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:2375/_ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # Docker Management Service (container status and control API)
+  docker-manager:
+    build:
+      context: ./services/docker-manager
+      dockerfile: Dockerfile
+    image: notely/docker-manager:v3
+    container_name: notely-docker-manager-v3
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      PORT: 8005
+      DOCKER_HOST: tcp://docker-proxy:2375
+    ports:
+      - "127.0.0.1:8005:8005"
+    volumes:
+      - ./:/app/server:rw  # Mount server directory to update .env file
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # Docker socket for docker-compose CLI
+    networks:
+      - notely-v3-network
+    depends_on:
+      - docker-proxy
+      - gateway
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  postgres-v3-data:
+    name: notely-postgres-v3-data
+  redis-v3-data:
+    name: notely-redis-v3-data
+  loki-v3-data:
+    name: notely-loki-v3-data
+  promtail-v3-positions:
+    name: notely-promtail-v3-positions
+  grafana-v3-data:
+    name: notely-grafana-v3-data
+  prometheus-v3-data:
+    name: notely-prometheus-v3-data
+  rabbitmq-v3-data:
+    name: notely-rabbitmq-v3-data
+  crowdsec-v3-config:
+    name: notely-crowdsec-v3-config
+  crowdsec-v3-data:
+    name: notely-crowdsec-v3-data
+  nginx-logs:
+    name: notely-nginx-logs-v3
+  node-exporter-textfile:
+    name: notely-node-exporter-textfile
+  clamav-v3-data:
+    name: notely-clamav-v3-data
+
+networks:
+  notely-v3-network:
+    name: notely-v3-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16

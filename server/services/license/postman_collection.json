@@ -1,0 +1,506 @@
+{
+  "info": {
+    "name": "Notely License Service API",
+    "description": "Complete API collection for the Notely License Service including admin, validation, and health endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3210",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "your-admin-jwt-token-here",
+      "type": "string"
+    },
+    {
+      "key": "licenseKey",
+      "value": "generated-license-key-will-be-stored-here",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Monitoring",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Basic health check endpoint (liveness probe)"
+          },
+          "response": []
+        },
+        {
+          "name": "Readiness Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ready",
+              "host": ["{{baseUrl}}"],
+              "path": ["ready"]
+            },
+            "description": "Readiness check that verifies database, Redis, and key availability"
+          },
+          "response": []
+        },
+        {
+          "name": "Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["metrics"]
+            },
+            "description": "Prometheus-formatted metrics"
+          },
+          "response": []
+        }
+      ],
+      "description": "Health and monitoring endpoints"
+    },
+    {
+      "name": "Validation (Public)",
+      "item": [
+        {
+          "name": "Validate License",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has valid field\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('valid');",
+                  "});",
+                  "",
+                  "pm.test(\"If valid, has required fields\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.valid) {",
+                  "        pm.expect(jsonData).to.have.property('licenseId');",
+                  "        pm.expect(jsonData).to.have.property('type');",
+                  "        pm.expect(jsonData).to.have.property('organizationId');",
+                  "        pm.expect(jsonData).to.have.property('features');",
+                  "        pm.expect(jsonData).to.have.property('limits');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"licenseKey\": \"{{licenseKey}}\",\n  \"hardwareId\": \"ABC123-DEF456-GHI789\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/license/validate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "license", "validate"]
+            },
+            "description": "Validate a license key and return details if valid"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Public Key",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is PEM format\", function () {",
+                  "    pm.expect(pm.response.text()).to.include('BEGIN PUBLIC KEY');",
+                  "    pm.expect(pm.response.text()).to.include('END PUBLIC KEY');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/license/public-key",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "license", "public-key"]
+            },
+            "description": "Retrieve the public key for offline license validation"
+          },
+          "response": []
+        }
+      ],
+      "description": "Public endpoints for license validation (no authentication required)"
+    },
+    {
+      "name": "Admin - License Management",
+      "item": [
+        {
+          "name": "Generate Perpetual License",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has licenseKey\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('licenseKey');",
+                  "    pm.collectionVariables.set('licenseKey', jsonData.licenseKey);",
+                  "});",
+                  "",
+                  "pm.test(\"License type is perpetual\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.type).to.eql('perpetual');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"perpetual\",\n  \"organizationId\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"userId\": \"123e4567-e89b-12d3-a456-426614174001\",\n  \"features\": {\n    \"meetings\": true,\n    \"recording\": true,\n    \"transcription\": true,\n    \"analytics\": true\n  },\n  \"limits\": {\n    \"maxUsers\": 500,\n    \"maxStorage\": 10000,\n    \"maxMeetingDuration\": 480\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/license/admin/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "license", "admin", "generate"]
+            },
+            "description": "Generate a new perpetual license (no expiration)"
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Subscription License",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"License type is subscription\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.type).to.eql('subscription');",
+                  "    pm.expect(jsonData).to.have.property('expiresAt');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"subscription\",\n  \"organizationId\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"userId\": \"123e4567-e89b-12d3-a456-426614174001\",\n  \"features\": {\n    \"meetings\": true,\n    \"recording\": false,\n    \"transcription\": true\n  },\n  \"limits\": {\n    \"maxUsers\": 100,\n    \"maxStorage\": 1000\n  },\n  \"expiresAt\": \"2026-01-31T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/license/admin/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "license", "admin", "generate"]
+            },
+            "description": "Generate a subscription license with expiration date"
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Trial License",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"License type is trial\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.type).to.eql('trial');",
+                  "    pm.expect(jsonData).to.have.property('hardwareId');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"trial\",\n  \"organizationId\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"userId\": \"123e4567-e89b-12d3-a456-426614174001\",\n  \"hardwareId\": \"ABC123-DEF456-GHI789\",\n  \"features\": {\n    \"meetings\": true\n  },\n  \"limits\": {\n    \"maxUsers\": 10,\n    \"maxStorage\": 100\n  },\n  \"expiresAt\": \"2025-12-13T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/license/admin/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "license", "admin", "generate"]
+            },
+            "description": "Generate a trial license with hardware binding and expiration"
+          },
+          "response": []
+        },
+        {
+          "name": "Get License Info",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has required fields\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('licenseId');",
+                  "    pm.expect(jsonData).to.have.property('type');",
+                  "    pm.expect(jsonData).to.have.property('features');",
+                  "    pm.expect(jsonData).to.have.property('issuer');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/license/admin/info/{{licenseKey}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "license", "admin", "info", "{{licenseKey}}"]
+            },
+            "description": "Retrieve detailed information about a specific license"
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke License",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Revocation successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData).to.have.property('revokedAt');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/license/admin/revoke/{{licenseKey}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "license", "admin", "revoke", "{{licenseKey}}"]
+            },
+            "description": "Revoke an existing license key"
+          },
+          "response": []
+        }
+      ],
+      "description": "Admin endpoints for license management (requires admin authentication)",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Error Scenarios",
+      "item": [
+        {
+          "name": "Generate License - Invalid Type",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"invalid-type\",\n  \"organizationId\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"userId\": \"123e4567-e89b-12d3-a456-426614174001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/license/admin/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "license", "admin", "generate"]
+            },
+            "description": "Test validation error for invalid license type"
+          },
+          "response": []
+        },
+        {
+          "name": "Generate License - Missing Auth",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"perpetual\",\n  \"organizationId\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"userId\": \"123e4567-e89b-12d3-a456-426614174001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/license/admin/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "license", "admin", "generate"]
+            },
+            "description": "Test authentication error (401)"
+          },
+          "response": []
+        },
+        {
+          "name": "Validate License - Invalid Key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"licenseKey\": \"invalid-jwt-token\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/license/validate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "license", "validate"]
+            },
+            "description": "Test validation with invalid license key"
+          },
+          "response": []
+        }
+      ],
+      "description": "Example error scenarios for testing"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Pre-request script runs before each request",
+          "// Can be used to set dynamic variables, add timestamps, etc.",
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script runs after each request",
+          "pm.test(\"Response time is less than 2000ms\", function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+          "});"
+        ]
+      }
+    }
+  ]
+}

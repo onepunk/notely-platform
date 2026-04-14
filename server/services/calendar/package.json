@@ -1,0 +1,30 @@
+{
+  "name": "@notely/calendar",
+  "version": "1.0.0",
+  "description": "Notely V3 Calendar Service - Microsoft Outlook integration",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@notely/shared": "file:../../packages",
+    "@azure/msal-node": "^2.6.0",
+    "axios": "^1.6.0",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "prom-client": "^14.2.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.54.0",
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

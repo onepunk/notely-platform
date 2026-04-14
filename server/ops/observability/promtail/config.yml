@@ -1,0 +1,214 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /var/lib/promtail/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # =============================================================================
+  # DOCKER CONTAINER LOGS
+  # =============================================================================
+  - job_name: docker-logs
+    pipeline_stages:
+      - docker: {}
+
+      # Try to parse as JSON first (for structured logs)
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            service: service
+            message: message
+            trace_id: trace_id
+            request_id: request_id
+            user_id: user_id
+            metadata: metadata
+            error: error
+            stack: stack
+          source: log
+
+      # Normalize level to uppercase for consistent filtering
+      - template:
+          source: level
+          template: '{{ if .level }}{{ .level | ToUpper }}{{ end }}'
+
+      # If JSON parsing succeeded, use those values
+      - labels:
+          level:
+          service:
+
+      # Fall back to regex parsing for non-JSON logs
+      - match:
+          selector: '{level=""}'
+          stages:
+            - regex:
+                expression: '^(?P<level>(TRACE|DEBUG|INFO|WARN|ERROR|FATAL))(?::|\s|-)\s*(?P<message>.*)'
+                source: log
+            - labels:
+                level:
+
+      # Ensure message is set
+      - template:
+          source: log
+          template: '{{ if .message }}{{ .message }}{{ else }}{{ .log }}{{ end }}'
+          destination: formatted_message
+
+      - output:
+          source: formatted_message
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      # Extract clean container name from docker container name
+      - source_labels: [__meta_docker_container_name]
+        regex: '/?(notely-[^.:]+).*'
+        replacement: '$1'
+        target_label: container
+      # Extract service name (without notely- prefix)
+      - source_labels: [container]
+        regex: 'notely-(.+)'
+        target_label: service
+      # Keep compose service name for easy filtering
+      - source_labels: [__meta_docker_container_label_com_docker_compose_service]
+        target_label: compose_service
+      # Static project label
+      - target_label: project
+        replacement: notely
+      # Job label for docker logs
+      - target_label: job
+        replacement: docker
+
+  # =============================================================================
+  # NGINX ACCESS LOGS (from host)
+  # =============================================================================
+  - job_name: nginx-access
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          log_type: access
+          __path__: /var/log/nginx/access.log
+    pipeline_stages:
+      # Parse nginx combined log format
+      - regex:
+          expression: '^(?P<remote_addr>[\d\.]+) - (?P<remote_user>[^ ]*) \[(?P<time_local>[^\]]+)\] "(?P<request_method>\w+) (?P<request_uri>[^ ]+) (?P<http_version>[^"]+)" (?P<status>\d+) (?P<body_bytes_sent>\d+) "(?P<http_referer>[^"]*)" "(?P<http_user_agent>[^"]*)"'
+      - labels:
+          status:
+          request_method:
+      # Map status codes to severity levels
+      - template:
+          source: status
+          template: '{{ if ge (int .status) 500 }}ERROR{{ else if ge (int .status) 400 }}WARN{{ else }}INFO{{ end }}'
+          destination: level
+      - labels:
+          level:
+
+  # =============================================================================
+  # NGINX ERROR LOGS (from host)
+  # =============================================================================
+  - job_name: nginx-error
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          log_type: error
+          level: ERROR
+          __path__: /var/log/nginx/error.log
+    pipeline_stages:
+      # Parse nginx error log format
+      - regex:
+          expression: '^(?P<time>\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) \[(?P<level>\w+)\] (?P<pid>\d+)#(?P<tid>\d+): (?:\*(?P<cid>\d+) )?(?P<message>.*)'
+      - labels:
+          level:
+
+  # =============================================================================
+  # SYSTEM LOGS (from host)
+  # =============================================================================
+  - job_name: syslog
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: syslog
+          __path__: /var/log/syslog
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<timestamp>\w+\s+\d+\s+\d+:\d+:\d+)\s+(?P<hostname>\S+)\s+(?P<program>[^\[:]+)(?:\[(?P<pid>\d+)\])?:\s+(?P<message>.*)'
+      - labels:
+          program:
+      # Detect error-like messages
+      - match:
+          selector: '{job="syslog"}'
+          stages:
+            - regex:
+                expression: '(?i)(?P<error_indicator>error|fail|critical|emergency|alert)'
+                source: message
+            - template:
+                source: error_indicator
+                template: '{{ if .error_indicator }}ERROR{{ else }}INFO{{ end }}'
+                destination: level
+            - labels:
+                level:
+
+  # =============================================================================
+  # AUTH LOG (from host) - Security events
+  # =============================================================================
+  - job_name: authlog
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: authlog
+          __path__: /var/log/auth.log
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<timestamp>\w+\s+\d+\s+\d+:\d+:\d+)\s+(?P<hostname>\S+)\s+(?P<program>[^\[:]+)(?:\[(?P<pid>\d+)\])?:\s+(?P<message>.*)'
+      - labels:
+          program:
+      # Detect authentication failures
+      - match:
+          selector: '{job="authlog"}'
+          stages:
+            - regex:
+                expression: '(?i)(?P<auth_failure>authentication failure|failed password|invalid user)'
+                source: message
+            - template:
+                source: auth_failure
+                template: '{{ if .auth_failure }}WARN{{ else }}INFO{{ end }}'
+                destination: level
+            - labels:
+                level:
+
+  # =============================================================================
+  # KERNEL/DMESG LOGS (from host) - Hardware issues, RAID events
+  # =============================================================================
+  - job_name: kernlog
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: kernel
+          __path__: /var/log/kern.log
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<timestamp>\w+\s+\d+\s+\d+:\d+:\d+)\s+(?P<hostname>\S+)\s+kernel:\s+\[\s*(?P<uptime>[\d\.]+)\]\s+(?P<message>.*)'
+      - labels: {}
+      # Detect hardware errors and RAID events
+      - match:
+          selector: '{job="kernel"}'
+          stages:
+            - regex:
+                expression: '(?i)(?P<hw_error>error|fail|md:|raid|smart|sector|uncorrectable|offline)'
+                source: message
+            - template:
+                source: hw_error
+                template: '{{ if .hw_error }}WARN{{ else }}INFO{{ end }}'
+                destination: level
+            - labels:
+                level:

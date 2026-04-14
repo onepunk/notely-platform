@@ -1,0 +1,18 @@
+# CrowdSec Log Acquisition Configuration
+# Nginx logs are shared via the nginx-logs volume from the nginx container
+
+# Nginx access and error logs (file-based acquisition)
+---
+filenames:
+  - /var/log/nginx/access.log
+  - /var/log/nginx/error.log
+labels:
+  type: nginx
+
+# PostgreSQL logs (via Docker log driver)
+---
+source: docker
+container_name:
+  - notely-postgres-v3
+labels:
+  type: postgresql

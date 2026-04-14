@@ -1,0 +1,430 @@
+# Portal Configuration for ${PORTAL_DOMAIN}
+# Handles portal UI and related API requests
+
+# HTTP to HTTPS redirect
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${PORTAL_DOMAIN};
+
+    # Let's Encrypt challenge location
+    location /.well-known/acme-challenge/ {
+        root /etc/nginx/ssl/webroot;
+        try_files $uri =404;
+    }
+
+    # Redirect all other HTTP traffic to HTTPS
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# HTTPS server for Portal
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name ${PORTAL_DOMAIN};
+
+    # Dynamic upstream resolution - resolves DNS on each request (not at startup)
+    # This prevents stale IP issues when containers restart and get new IPs
+    # Uses the resolver directive in nginx.conf (127.0.0.11 valid=10s)
+    set $upstream_portal portal:3204;
+    set $upstream_gateway gateway:3200;
+    set $upstream_grafana grafana:3000;
+
+    # SSL configuration - uses wildcard cert
+    ssl_certificate /etc/nginx/ssl/certs/${BASE_DOMAIN}.crt;
+    ssl_certificate_key /etc/nginx/ssl/private/${BASE_DOMAIN}.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    # Strong cipher suite - forward secrecy required, no weak ciphers
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    # HSTS
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    # Permissions Policy - restrict unused browser APIs
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()" always;
+    # Content Security Policy - fonts self-hosted via next/font, Emotion CSS-in-JS inline styles
+    # script-src: 'unsafe-inline' required for Next.js inline bootstrap scripts (__NEXT_DATA__ etc.)
+    # Cloudflare Insights whitelisted for Web Analytics beacon
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';" always;
+
+    # Portal health endpoint
+    location /health {
+        add_header X-Nginx-Location "portal-health" always;
+        proxy_pass http://$upstream_portal;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Grafana Observatory - Admin only (behind IP whitelist)
+    # Proxies to Grafana for monitoring dashboards
+    location /grafana/ {
+        # Check IP whitelist (default allows all when whitelist is empty)
+        if ($admin_ip_allowed = 0) {
+            return 302 /;
+        }
+
+        # Security headers for Grafana (overrides server-level headers)
+        # Using add_header here replaces ALL inherited server-level add_header directives
+        # Grafana is protected by: admin IP whitelist + Grafana auth + HTTPS
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        # No CSP - Grafana uses inline scripts with nonces that we can't coordinate with nginx
+
+        # Pass full path to Grafana - it handles /grafana/ sub-path with SERVE_FROM_SUB_PATH=true
+        proxy_pass http://grafana:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+
+        # WebSocket support for Grafana live features
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_connect_timeout 10s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        proxy_buffering off;
+    }
+
+    # Admin IP Whitelist - Frontend admin pages
+    # Note: /login is NOT blocked - anyone can access the login page
+    location ^~ /admin/ {
+        # Check IP whitelist (default allows all when whitelist is empty)
+        if ($admin_ip_allowed = 0) {
+            return 302 /;
+        }
+
+        # IP allowed - proxy to portal
+        proxy_pass http://$upstream_portal$request_uri;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-ID $request_id;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_connect_timeout 10s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        proxy_buffering off;
+        proxy_request_buffering off;
+    }
+
+    # Admin releases endpoint - needs longer timeouts for large file uploads
+    location ^~ /api/portal/admin/releases {
+        # Check IP whitelist (default allows all when whitelist is empty)
+        if ($admin_ip_allowed = 0) {
+            return 302 /;
+        }
+
+        # IP allowed - apply standard authentication checks
+        if ($request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin $cors_origin always;
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "Authorization, Content-Type, X-Request-ID, X-Api-Key" always;
+            add_header Access-Control-Allow-Credentials $cors_credentials always;
+            add_header Access-Control-Max-Age 3600 always;
+            return 204;
+        }
+
+        if ($api_deny_request = 1) {
+            add_header Content-Type "application/json" always;
+            return 401 '{"error":"Unauthorized","message":"Missing credentials. Provide Authorization header, API key, or valid session cookie."}';
+        }
+
+        # Higher limit to allow concurrent GET requests alongside uploads
+        limit_conn addr 5;
+
+        # Proxy to gateway with extended timeouts for large file uploads
+        proxy_pass http://$upstream_gateway$request_uri;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-ID $request_id;
+        proxy_set_header Cookie $http_cookie;
+        proxy_pass_header Set-Cookie;
+
+        # Extended timeouts for large file uploads (15 minutes)
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 900s;
+        proxy_read_timeout 900s;
+
+        # Disable buffering for streaming uploads
+        proxy_buffering off;
+        proxy_request_buffering off;
+    }
+
+    # Admin IP Whitelist - Backend admin API endpoints
+    location ^~ /api/portal/admin/ {
+        # Check IP whitelist (default allows all when whitelist is empty)
+        if ($admin_ip_allowed = 0) {
+            return 302 /;
+        }
+
+        # IP allowed - apply standard authentication checks
+        if ($request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin $cors_origin always;
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "Authorization, Content-Type, X-Request-ID, X-Api-Key" always;
+            add_header Access-Control-Allow-Credentials $cors_credentials always;
+            add_header Access-Control-Max-Age 3600 always;
+            return 204;
+        }
+
+        if ($api_deny_request = 1) {
+            add_header Content-Type "application/json" always;
+            return 401 '{"error":"Unauthorized","message":"Missing credentials. Provide Authorization header, API key, or valid session cookie."}';
+        }
+
+        # Rate limiting
+        limit_req zone=general burst=20 nodelay;
+        limit_conn addr 10;
+
+        # Proxy to gateway
+        proxy_pass http://$upstream_gateway$request_uri;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-ID $request_id;
+        proxy_set_header Cookie $http_cookie;
+        proxy_pass_header Set-Cookie;
+        proxy_connect_timeout 10s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # Admin API endpoints (direct gateway routes) - IP whitelist protected
+    location ^~ /api/admin/ {
+        # Check IP whitelist (default allows all when whitelist is empty)
+        if ($admin_ip_allowed = 0) {
+            return 302 /;
+        }
+
+        # IP allowed - apply standard authentication checks
+        if ($request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin $cors_origin always;
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "Authorization, Content-Type, X-Request-ID, X-Api-Key" always;
+            add_header Access-Control-Allow-Credentials $cors_credentials always;
+            add_header Access-Control-Max-Age 3600 always;
+            return 204;
+        }
+
+        if ($api_deny_request = 1) {
+            add_header Content-Type "application/json" always;
+            return 401 '{"error":"Unauthorized","message":"Missing credentials. Provide Authorization header, API key, or valid session cookie."}';
+        }
+
+        # Rate limiting
+        limit_req zone=general burst=20 nodelay;
+        limit_conn addr 10;
+
+        # Proxy to gateway
+        proxy_pass http://$upstream_gateway$request_uri;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-ID $request_id;
+        proxy_set_header Cookie $http_cookie;
+        proxy_pass_header Set-Cookie;
+        proxy_connect_timeout 10s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # Public authentication endpoints - no credentials required
+    location ^~ /api/auth/ {
+        limit_req zone=auth burst=10 nodelay;
+        limit_conn addr 5;
+
+        proxy_pass http://$upstream_gateway$request_uri;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-ID $request_id;
+        proxy_connect_timeout 10s;
+        proxy_send_timeout 30s;
+        proxy_read_timeout 30s;
+
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # Public configuration endpoints - no credentials required
+    location ^~ /api/public/ {
+        limit_req zone=general burst=10 nodelay;
+        limit_conn addr 5;
+
+        proxy_pass http://$upstream_gateway$request_uri;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-ID $request_id;
+        proxy_connect_timeout 10s;
+        proxy_send_timeout 30s;
+        proxy_read_timeout 30s;
+    }
+
+    # Status/health endpoints - no credentials required
+    location ^~ /api/status {
+        proxy_pass http://$upstream_gateway$request_uri;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # All other API endpoints - require credentials
+    location /api/ {
+        if ($request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin $cors_origin always;
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "Authorization, Content-Type, X-Request-ID, X-Api-Key" always;
+            add_header Access-Control-Allow-Credentials $cors_credentials always;
+            add_header Access-Control-Max-Age 3600 always;
+            return 204;
+        }
+
+        if ($api_deny_request = 1) {
+            add_header Content-Type "application/json" always;
+            return 401 '{"error":"Unauthorized","message":"Missing credentials. Provide Authorization header, API key, or valid session cookie."}';
+        }
+
+        limit_req zone=general burst=20 nodelay;
+        limit_conn addr 10;
+
+        proxy_pass http://$upstream_gateway$request_uri;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-ID $request_id;
+        proxy_set_header Cookie $http_cookie;
+        proxy_pass_header Set-Cookie;
+        proxy_connect_timeout 10s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # Next.js static assets
+    # NOTE: add_header inside a location block replaces ALL server-level add_header directives,
+    # so security headers must be repeated here alongside cache-control headers.
+    location /_next/ {
+        proxy_pass http://$upstream_portal;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_cache_bypass $http_upgrade;
+        proxy_buffering off;
+
+        # Security headers (must repeat since add_header in location replaces server-level)
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';" always;
+
+        # Cache control for development
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
+    }
+
+    # Portal root - all other routes
+    location / {
+        proxy_pass http://$upstream_portal;
+        proxy_http_version 1.1;
+
+        # Headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header X-Request-ID $request_id;
+
+        # WebSocket support for Next.js HMR
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+
+        # Cookie handling
+        proxy_set_header Cookie $http_cookie;
+        proxy_pass_header Set-Cookie;
+        proxy_cache_bypass $http_upgrade;
+
+        # Timeouts for SSR
+        proxy_connect_timeout 10s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+
+        # Buffering (disable for streaming)
+        proxy_buffering off;
+        proxy_request_buffering off;
+    }
+
+    # Block access to sensitive files (return 404 instead of 403 for security)
+    location ~ /\.(env|git|gitignore|gitattributes|htaccess|htpasswd|ini|log|sh|sql|conf|config)$ {
+        deny all;
+        access_log off;
+        log_not_found off;
+        return 404;
+    }
+
+    # Block access to common sensitive directories (but allow /api/ endpoints)
+    location ~ ^(?!/api/).*/(\.git|\.vscode|\.idea|node_modules|config|secrets)/.*$ {
+        deny all;
+        access_log off;
+        log_not_found off;
+        return 404;
+    }
+}

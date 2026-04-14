@@ -1,0 +1,80 @@
+# Documentation Site Configuration for ${DOCS_DOMAIN}
+# Proxies to VitePress preview server running on host via systemd (port 3000)
+
+# HTTP to HTTPS redirect
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${DOCS_DOMAIN};
+
+    # Let's Encrypt challenge location
+    location /.well-known/acme-challenge/ {
+        root /etc/nginx/ssl/webroot;
+        try_files $uri =404;
+    }
+
+    # Redirect all other HTTP traffic to HTTPS
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# HTTPS server for Documentation
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name ${DOCS_DOMAIN};
+
+    # SSL configuration - uses wildcard cert
+    ssl_certificate /etc/nginx/ssl/certs/${BASE_DOMAIN}.crt;
+    ssl_certificate_key /etc/nginx/ssl/private/${BASE_DOMAIN}.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    # HSTS
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()" always;
+    # CSP for VitePress: needs unsafe-inline for Vue.js hydration scripts and styles
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';" always;
+
+    # Health check
+    location /health {
+        access_log off;
+        add_header 'Content-Type' 'application/json';
+        return 200 '{"status":"healthy","service":"docs","timestamp":"$time_iso8601"}';
+    }
+
+    # All docs content
+    location / {
+        # Literal hostname - resolved at startup via /etc/hosts (extra_hosts in docker-compose)
+        # Not using a variable here because variable-based proxy_pass uses the runtime DNS
+        # resolver (127.0.0.11) which doesn't read /etc/hosts
+        proxy_pass http://host.docker.internal:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 10s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # Block access to sensitive files
+    location ~ /\.(env|git|gitignore|gitattributes|htaccess|htpasswd|ini|log|sh|sql|conf|config)$ {
+        deny all;
+        access_log off;
+        log_not_found off;
+        return 404;
+    }
+}

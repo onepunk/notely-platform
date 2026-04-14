@@ -1,0 +1,154 @@
+:root {
+  color-scheme: light dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#__next {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background-color: #f8f9fd;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* FullCalendar Dark Mode Fixes */
+.fc {
+  /* Fix header background in dark mode */
+  --fc-border-color: rgba(255, 255, 255, 0.12);
+  --fc-neutral-bg-color: rgba(255, 255, 255, 0.05);
+  --fc-page-bg-color: transparent;
+}
+
+[data-mui-color-scheme='dark'] .fc {
+  /* Dark mode specific overrides */
+  --fc-border-color: rgba(255, 255, 255, 0.12);
+  --fc-neutral-bg-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Fix bright white header row in dark mode */
+[data-mui-color-scheme='dark'] .fc .fc-col-header-cell {
+  background-color: #1e1e1e !important;
+  color: #ffffff;
+}
+
+[data-mui-color-scheme='dark'] .fc .fc-scrollgrid {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-mui-color-scheme='dark'] .fc-theme-standard td,
+[data-mui-color-scheme='dark'] .fc-theme-standard th {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-mui-color-scheme='dark'] .fc .fc-timegrid-slot {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-mui-color-scheme='dark'] .fc .fc-timegrid-slot-label {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #b0b0b0;
+}
+
+/* Theme button colors */
+.fc .fc-button-primary {
+  background-color: #132E2D !important;
+  border-color: #132E2D !important;
+  color: #fff !important;
+  border-radius: 10px;
+  text-transform: none;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  font-weight: 500;
+  padding: 6px 12px;
+  font-size: 0.875rem;
+}
+
+.fc .fc-button-primary:hover {
+  background-color: #0F2524 !important;
+  border-color: #0F2524 !important;
+}
+
+.fc .fc-button-primary:not(:disabled):active,
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+  background-color: #0F2524 !important;
+  border-color: #0F2524 !important;
+}
+
+.fc .fc-button-primary:focus {
+  box-shadow: 0 0 0 2px rgba(19, 46, 45, 0.2) !important;
+}
+
+.fc .fc-button-primary:disabled {
+  background-color: rgba(19, 46, 45, 0.3) !important;
+  border-color: rgba(19, 46, 45, 0.3) !important;
+  opacity: 0.6;
+}
+
+/* Dark mode text colors for calendar */
+[data-mui-color-scheme='dark'] .fc .fc-daygrid-day-number,
+[data-mui-color-scheme='dark'] .fc .fc-col-header-cell-cushion {
+  color: #ffffff;
+}
+
+[data-mui-color-scheme='dark'] .fc .fc-timegrid-axis-cushion,
+[data-mui-color-scheme='dark'] .fc .fc-timegrid-slot-label-cushion {
+  color: #b0b0b0;
+}
+
+/* Event styling for dark mode */
+[data-mui-color-scheme='dark'] .fc-event {
+  border-color: rgba(184, 247, 93, 0.8);
+  background-color: rgba(184, 247, 93, 0.2);
+  color: #B8F75D;
+}
+
+[data-mui-color-scheme='dark'] .fc-event-title {
+  color: #ffffff;
+}
+
+/* Light mode button adjustments */
+[data-mui-color-scheme='light'] .fc .fc-button-primary {
+  background-color: #132E2D !important;
+  border-color: #132E2D !important;
+  color: #fff !important;
+}
+
+[data-mui-color-scheme='light'] .fc .fc-button-primary:hover {
+  background-color: #0F2524 !important;
+  border-color: #0F2524 !important;
+}
+
+/* Today column highlight - dark grey for both modes */
+.fc .fc-day-today {
+  background-color: rgba(128, 128, 128, 0.15) !important;
+}
+
+[data-mui-color-scheme='dark'] .fc .fc-day-today {
+  background-color: rgba(128, 128, 128, 0.2) !important;
+}
+
+.fc .fc-col-header-cell.fc-day-today {
+  background-color: rgba(128, 128, 128, 0.25) !important;
+}
+
+[data-mui-color-scheme='dark'] .fc .fc-col-header-cell.fc-day-today {
+  background-color: rgba(128, 128, 128, 0.3) !important;
+}

@@ -1,0 +1,228 @@
+// This is your Prisma schema file
+// License Service Schema - Notely Platform V3
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// License model - Stores license records with metadata
+model License {
+  // Primary identifiers
+  id                String   @id @default(uuid()) @db.Uuid
+
+  // License details
+  subject           String   @db.VarChar(255)      // Organization ID or user ID
+  type              String   @db.VarChar(50)       // 'desktop', 'portal', 'notely-ai', 'trial', etc.
+
+  // License content and limits (stored as JSONB)
+  features          Json     @db.JsonB             // Feature flags and capabilities
+  limits            Json     @db.JsonB             // Usage limits (users, storage, etc.)
+
+  // License lifecycle
+  issuedAt          DateTime @default(now()) @db.Timestamptz(6)
+  expiresAt         DateTime? @db.Timestamptz(6)
+  revokedAt         DateTime? @db.Timestamptz(6)
+
+  // Cryptographic metadata
+  publicKeyVersion  String   @db.VarChar(50)       // Key version for rotation tracking
+
+  // Audit trail
+  issuedBy          String   @db.VarChar(255)      // User ID of license creator
+  revokedBy         String?  @db.VarChar(255)      // User ID who revoked (if revoked)
+  revocationReason  String?  @db.Text              // Reason for revocation
+
+  // Hardware binding (for portal licenses)
+  hardwareId        String?  @db.VarChar(255)      // Hardware fingerprint
+
+  // Activation fields (for notely-ai licenses)
+  activationLimit   Int      @default(1)           // Max number of email activations
+  activationCount   Int      @default(0)           // Current active activations
+  offlineGraceDays  Int      @default(30)          // Days allowed offline
+  revalidationIntervalHours Int @default(168)      // Hours between required online checks
+
+  // Timestamps
+  createdAt         DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(6)
+
+  // Relations
+  validations       LicenseValidation[]
+  activeSessions    ActiveSession[]
+  activations       LicenseActivation[]
+
+  // Indexes
+  @@index([subject], name: "idx_licenses_subject")
+  @@index([type], name: "idx_licenses_type")
+  @@index([expiresAt], name: "idx_licenses_expires_at")
+  @@index([revokedAt], name: "idx_licenses_revoked_at")
+  @@index([issuedAt], name: "idx_licenses_issued_at")
+
+  // Map to database table
+  @@map("licenses")
+  @@schema("license")
+}
+
+// LicenseValidation model - Tracks validation attempts for auditing
+model LicenseValidation {
+  // Primary identifier
+  id              String   @id @default(uuid()) @db.Uuid
+
+  // License reference
+  licenseId       String   @db.Uuid
+  license         License  @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+
+  // Validation details
+  validatedAt     DateTime @default(now()) @db.Timestamptz(6)
+  validationMode  String   @db.VarChar(20)       // 'online' or 'offline'
+  result          String   @db.VarChar(20)       // 'valid', 'expired', 'revoked', 'invalid'
+
+  // Client information
+  clientIp        String?  @db.VarChar(45)       // IPv4 or IPv6 address
+  userId          String?  @db.VarChar(255)      // User ID if authenticated
+  userAgent       String?  @db.Text              // Client user agent string
+
+  // Error tracking
+  errorCode       String?  @db.VarChar(50)       // Error code if validation failed
+  errorMessage    String?  @db.Text              // Error details
+
+  // Additional metadata
+  metadata        Json?    @db.JsonB             // Additional validation context
+
+  // Timestamps
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+
+  // Indexes
+  @@index([licenseId], name: "idx_validations_license_id")
+  @@index([validatedAt], name: "idx_validations_validated_at")
+  @@index([result], name: "idx_validations_result")
+  @@index([clientIp], name: "idx_validations_client_ip")
+
+  // Map to database table
+  @@map("license_validations")
+  @@schema("license")
+}
+
+// FeatureDefinition model - Feature flag configuration
+model FeatureDefinition {
+  // Primary identifier
+  id              String   @id @default(uuid()) @db.Uuid
+
+  // Feature details
+  featureKey      String   @unique @db.VarChar(100)  // Unique feature identifier
+  name            String   @db.VarChar(255)          // Human-readable name
+  description     String?  @db.Text                  // Feature description
+
+  // Feature configuration
+  enabled         Boolean  @default(true)             // Global enable/disable
+  category        String?  @db.VarChar(50)           // Feature category
+
+  // Default values
+  defaultValue    Json?    @db.JsonB                 // Default configuration
+
+  // Constraints
+  requiredPlan    String?  @db.VarChar(50)           // Minimum plan level required
+
+  // Timestamps
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
+
+  // Indexes
+  @@index([featureKey], name: "idx_features_key")
+  @@index([enabled], name: "idx_features_enabled")
+  @@index([category], name: "idx_features_category")
+
+  // Map to database table
+  @@map("feature_definitions")
+  @@schema("license")
+}
+
+// LicenseActivation model - Tracks license activations for notely-ai licenses
+model LicenseActivation {
+  // Primary identifier
+  id                    String   @id @default(uuid()) @db.Uuid
+
+  // License reference
+  licenseId             String   @db.Uuid
+  license               License  @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+
+  // User binding (email is the primary binding mechanism)
+  userEmail             String   @db.VarChar(255)
+  userEmailHash         String   @db.VarChar(64)    // SHA256 hash for secure lookups
+
+  // Activation lifecycle
+  activatedAt           DateTime @default(now()) @db.Timestamptz(6)
+  deactivatedAt         DateTime? @db.Timestamptz(6)
+
+  // Client information
+  platform              String?  @db.VarChar(50)    // windows, macos, linux
+  appVersion            String?  @db.VarChar(50)
+  activationIp          String?  @db.VarChar(45)    // IPv4 or IPv6
+
+  // Offline token management
+  lastOnlineValidation  DateTime? @db.Timestamptz(6)
+  offlineGraceDeadline  DateTime? @db.Timestamptz(6)
+
+  // Metadata
+  metadata              Json?    @db.JsonB
+
+  // Timestamps
+  createdAt             DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime @updatedAt @db.Timestamptz(6)
+
+  // Unique constraint: one activation per email per license
+  @@unique([licenseId, userEmailHash], name: "uq_license_email")
+
+  // Indexes
+  @@index([userEmailHash], name: "idx_activations_email_hash")
+  @@index([licenseId], name: "idx_activations_license_id")
+  @@index([activatedAt], name: "idx_activations_activated_at")
+
+  // Map to database table
+  @@map("license_activations")
+  @@schema("license")
+}
+
+// ActiveSession model - Tracks active sessions for concurrent client enforcement
+model ActiveSession {
+  // Primary identifier
+  id              String   @id @default(uuid()) @db.Uuid
+
+  // License and user reference
+  licenseId       String   @db.Uuid
+  license         License  @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  userId          String   @db.VarChar(255)
+
+  // Session details
+  sessionId       String   @unique @db.VarChar(255)  // Unique session identifier
+  clientIp        String?  @db.VarChar(45)           // Client IP address
+  userAgent       String?  @db.Text                  // Client user agent
+
+  // Session lifecycle
+  startedAt       DateTime @default(now()) @db.Timestamptz(6)
+  lastHeartbeat   DateTime @default(now()) @db.Timestamptz(6)
+  expiresAt       DateTime @db.Timestamptz(6)        // Session expiration
+
+  // Session metadata
+  metadata        Json?    @db.JsonB                 // Additional session data
+
+  // Timestamps
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
+
+  // Indexes
+  @@index([licenseId], name: "idx_sessions_license_id")
+  @@index([userId], name: "idx_sessions_user_id")
+  @@index([sessionId], name: "idx_sessions_session_id")
+  @@index([lastHeartbeat], name: "idx_sessions_last_heartbeat")
+  @@index([expiresAt], name: "idx_sessions_expires_at")
+  @@index([licenseId, userId], name: "idx_sessions_license_user")
+
+  // Map to database table
+  @@map("active_sessions")
+  @@schema("license")
+}

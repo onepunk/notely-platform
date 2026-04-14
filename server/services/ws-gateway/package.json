@@ -1,0 +1,17 @@
+{
+  "name": "@notely/ws-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "ws": "^8.14.2",
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.1.0",
+    "redis": "^4.6.8",
+    "prom-client": "^15.0.0"
+  }
+}

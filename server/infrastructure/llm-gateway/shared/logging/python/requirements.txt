@@ -1,0 +1,4 @@
+# Shared Python logging dependencies
+# These should be added to individual service requirements.txt files
+Flask>=2.0.0
+uuid>=1.30  # Usually built-in, but listed for clarity

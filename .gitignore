@@ -1,0 +1,124 @@
+# Environment variables
+.env
+.env.local
+.env.production
+.env.staging
+
+# Secrets (centralized secrets file - NEVER commit!)
+server/config/secrets.env
+server/config/secrets.dev.env
+server/config/secrets.prod.env
+server/config/secrets.staging.env
+*.crt
+*.key
+
+# Dependencies
+node_modules/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Logs (log files, not source directories)
+/logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Temporary files
+tmp/
+temp/
+
+# Reports
+reports/
+
+# Large external dependencies
+llama.cpp/
+
+# Build artifacts and executables
+*.exe
+*.AppImage
+*.deb
+*.msi
+dist/
+build/
+node_modules/
+
+# Desktop client build outputs
+desktop-client/dist/
+desktop-client/build/
+desktop-client/scripts/downloads/
+
+# Large executable files and installers
+*.exe
+*.deb
+*.AppImage
+*.msi
+downloads/
+scripts/downloads/
+
+# Large electron binaries
+node_modules/electron/dist/electron
+dist/win-unpacked/Notely.exe
+server/llm/__pycache__/
+
+# Generated configuration artifacts
+server/config/generated/
+server/database-backups/
+
+# ACME working directories and challenge artifacts
+server/ssl/.letsencrypt_rsa/
+server/ssl/webroot/
+server/ssl/*.backup
+server/ssl/openssl.cnf
+
+# Model files (large AI model files should not be committed)
+# Only ignore actual model binary files and specific infrastructure directories
+*.bin
+*.gguf
+*.safetensors
+*.pt
+*.pth
+*.onnx
+*.tflite
+*.h5
+*.pb
+server/infrastructure/llm-shared/models/
+llm-shared/models/
+
+# LLM cache and temporary files
+**/llm-cache/
+**/.cache/
+server/infrastructure/llm-gateway/__pycache__/
+server/infrastructure/llm-gateway/cache/
+server/infrastructure/llm-gateway/*.pyc
+
+# Local secrets (never commit)
+config/secrets.*.env
+config/.env
+.env

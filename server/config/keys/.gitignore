@@ -1,0 +1,9 @@
+# CRITICAL: Never commit private keys!
+*-private.pem
+*.key
+
+# Keep public keys (safe to distribute)
+!*-public.pem
+
+# Keep this .gitignore
+!.gitignore

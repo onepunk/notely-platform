@@ -1,0 +1,81 @@
+{
+  "features": [
+    {
+      "id": "basic_notes",
+      "name": "Basic Notes",
+      "description": "Create, edit, and delete basic text notes",
+      "tier": "free"
+    },
+    {
+      "id": "rich_text_editor",
+      "name": "Rich Text Editor",
+      "description": "Format notes with bold, italic, underline, and links",
+      "tier": "professional"
+    },
+    {
+      "id": "collaboration",
+      "name": "Real-time Collaboration",
+      "description": "Share notes and collaborate with team members in real-time",
+      "tier": "enterprise"
+    },
+    {
+      "id": "version_history",
+      "name": "Version History",
+      "description": "Track and restore previous versions of notes",
+      "tier": "professional"
+    },
+    {
+      "id": "sync_across_devices",
+      "name": "Sync Across Devices",
+      "description": "Automatically sync notes across all your devices",
+      "tier": "professional"
+    },
+    {
+      "id": "advanced_search",
+      "name": "Advanced Search",
+      "description": "Search notes by tags, dates, and content with advanced filters",
+      "tier": "professional"
+    },
+    {
+      "id": "api_access",
+      "name": "API Access",
+      "description": "Access notes programmatically via REST API",
+      "tier": "enterprise"
+    },
+    {
+      "id": "sso_authentication",
+      "name": "SSO Authentication",
+      "description": "Single Sign-On with SAML 2.0 or OAuth 2.0",
+      "tier": "enterprise"
+    },
+    {
+      "id": "audit_logging",
+      "name": "Audit Logging",
+      "description": "Comprehensive audit logs for compliance and security",
+      "tier": "enterprise"
+    },
+    {
+      "id": "custom_branding",
+      "name": "Custom Branding",
+      "description": "Customize the application with your own branding",
+      "tier": "enterprise"
+    }
+  ],
+  "tiers": [
+    {
+      "id": "free",
+      "name": "Free",
+      "description": "Free tier with basic features"
+    },
+    {
+      "id": "professional",
+      "name": "Professional",
+      "description": "Professional tier with advanced features"
+    },
+    {
+      "id": "enterprise",
+      "name": "Enterprise",
+      "description": "Enterprise tier with all features and support"
+    }
+  ]
+}

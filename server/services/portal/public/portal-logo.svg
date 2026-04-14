@@ -1,0 +1,11 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mantisGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop stop-color="#4caf50" offset="0%"/>
+      <stop stop-color="#2962ff" offset="100%"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#mantisGradient)"/>
+  <path d="M40 64C40 48.536 48.536 40 64 40C79.464 40 88 48.536 88 64C88 79.464 79.464 88 64 88" stroke="white" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M40 84L40 44" stroke="white" stroke-width="10" stroke-linecap="round"/>
+</svg>

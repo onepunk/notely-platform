@@ -1,0 +1,138 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: gateway-auth-alerts
+    folder: Notely Alerts
+    interval: 1m
+    rules:
+      - uid: gateway-auth-failures
+        title: Gateway 401/403 Spike
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus-notely
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus-notely
+              editorMode: code
+              expr: sum(rate(notely_gateway_auth_denied_total[5m]))
+              format: time_series
+              interval: ""
+              intervalFactor: 2
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: true
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: '__expr__'
+            model:
+              datasource:
+                type: '__expr__'
+                uid: '__expr__'
+              expression: A
+              type: reduce
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: '__expr__'
+            model:
+              datasource:
+                type: '__expr__'
+                uid: '__expr__'
+              expression: B
+              type: threshold
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: gt
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+                  type: query
+              refId: C
+        for: 5m
+        noDataState: OK
+        execErrState: Alerting
+        annotations:
+          summary: Gateway 401/403 rate above 1 req/s for 5m
+        labels:
+          severity: warning
+        isPaused: false
+      - uid: gateway-introspection-latency
+        title: Introspection Latency P95 High
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus-notely
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus-notely
+              editorMode: code
+              expr: histogram_quantile(0.95, sum(rate(notely_gateway_introspection_duration_seconds_bucket[5m])) by (le))
+              format: time_series
+              interval: ""
+              intervalFactor: 2
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: true
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: '__expr__'
+            model:
+              datasource:
+                type: '__expr__'
+                uid: '__expr__'
+              expression: A
+              type: reduce
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: '__expr__'
+            model:
+              datasource:
+                type: '__expr__'
+                uid: '__expr__'
+              expression: B
+              type: threshold
+              conditions:
+                - evaluator:
+                    params:
+                      - 1.5
+                    type: gt
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+                  type: query
+              refId: C
+        for: 5m
+        noDataState: OK
+        execErrState: Alerting
+        annotations:
+          summary: Gateway introspection latency P95 above 1.5s
+        labels:
+          severity: warning
+        isPaused: false

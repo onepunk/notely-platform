@@ -1,0 +1,28 @@
+{
+  "name": "@notely/support",
+  "version": "1.0.0",
+  "description": "Notely V3 Support Service - Customer support ticket management",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@notely/shared": "file:../../packages",
+    "amqplib": "^0.10.3",
+    "clamdjs": "^1.0.2",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "prom-client": "^14.2.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.54.0",
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

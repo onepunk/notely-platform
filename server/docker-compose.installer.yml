@@ -1,0 +1,40 @@
+# Notely Platform - Installer Container Configuration
+#
+# This compose file runs the web-based installation wizard.
+# The installer automatically shuts down after successful installation.
+#
+# Usage:
+#   docker compose -f docker-compose.installer.yml up --build
+#
+# Or use the install.sh script:
+#   ./install.sh
+
+services:
+  installer:
+    build:
+      context: .
+      dockerfile: services/installer/Dockerfile
+    container_name: notely-installer-v3
+    ports:
+      - "${INSTALLER_PORT:-9000}:9000"
+    volumes:
+      # Mount workspace for configuration generation
+      - .:/workspace:rw
+      # Mount Docker socket for container management (read-only for security)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - NODE_ENV=production
+      - INSTALLER_PORT=9000
+      - INSTALLER_TIMEOUT_MINUTES=${INSTALLER_TIMEOUT_MINUTES:-30}
+      - WORKSPACE_PATH=/workspace
+    # Don't restart - installer is meant to run once
+    restart: "no"
+    # Run with installer profile (doesn't start with main platform)
+    profiles:
+      - installer
+    networks:
+      - installer-network
+
+networks:
+  installer-network:
+    driver: bridge

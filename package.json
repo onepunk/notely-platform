@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "dompurify": "^3.2.6",
+    "ini": "^5.0.0",
+    "validator": "^13.15.15",
+    "yaml": "^2.8.1"
+  },
+  "scripts": {
+    "config:emit:user-portal": "node server/config/bin/emit-env.js user-portal"
+  },
+  "devDependencies": {}
+}

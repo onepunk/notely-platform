@@ -1,0 +1,24 @@
+{
+  "name": "@notely/shared",
+  "version": "0.1.0",
+  "description": "Shared infrastructure for Notely Platform V3 services",
+  "main": "index.js",
+  "type": "commonjs",
+  "exports": {
+    ".": "./index.js",
+    "./*": "./*"
+  },
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "amqplib": "^0.10.4",
+    "axios": "^1.5.0",
+    "express": "^4.19.2",
+    "pg": "^8.11.3",
+    "prom-client": "^14.2.0",
+    "rate-limiter-flexible": "^5.0.5",
+    "redis": "^4.6.8",
+    "uuid": "^9.0.0",
+    "winston": "^3.10.0"
+  }
+}

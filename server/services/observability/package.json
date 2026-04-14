@@ -1,0 +1,28 @@
+{
+  "name": "@notely/observability",
+  "version": "1.0.0",
+  "description": "Notely V3 Logs Service - Loki proxy and retention management",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@notely/shared": "file:../../packages",
+    "axios": "^1.6.8",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "helmet": "^7.0.0",
+    "node-cron": "^3.0.3",
+    "prom-client": "^14.2.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.54.0",
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

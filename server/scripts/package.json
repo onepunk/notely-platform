@@ -1,0 +1,10 @@
+{
+  "name": "@notely-v2/scripts",
+  "version": "1.0.0",
+  "description": "Helper scripts for Notely V2",
+  "private": true,
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "pg": "^8.11.3"
+  }
+}

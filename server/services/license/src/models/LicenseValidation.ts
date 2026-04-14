@@ -1,0 +1,2 @@
+// License validation model
+export {};

@@ -1,0 +1,569 @@
+{
+  "/api/auth": {
+    "service": "auth",
+    "pathRewrite": {
+      "^/api/auth": "/api/auth"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": true,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 5,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 15000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "auth_service_unavailable",
+        "message": "Authentication service temporarily unavailable. Please retry shortly."
+      }
+    }
+  },
+  "/api/desktop-auth": {
+    "service": "auth",
+    "pathRewrite": {
+      "^/api/desktop-auth": "/api/desktop-auth"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": false,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 5,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 15000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "desktop_auth_unavailable",
+        "message": "Desktop OAuth endpoints temporarily unavailable. Please retry."
+      }
+    }
+  },
+  "/api/oauth": {
+    "service": "auth",
+    "pathRewrite": {
+      "^/api/oauth": "/api/oauth"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": false,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 5,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 15000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "oidc_unavailable",
+        "message": "OIDC provider temporarily unavailable. Please retry."
+      }
+    }
+  },
+  "/api/users": {
+    "service": "users",
+    "pathRewrite": {
+      "^/api/users": "/api/users"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": true,
+        "normalizeDates": true,
+        "normalizeCasing": true
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 5,
+      "successThreshold": 3,
+      "cooldownPeriodMs": 20000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "users_service_unavailable",
+        "message": "Users service temporarily unavailable. Cached data may be stale."
+      }
+    }
+  },
+  "/api/outlook": {
+    "service": "calendar",
+    "pathRewrite": {
+      "^/api/outlook": "/api/outlook"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": true,
+        "normalizeDates": true,
+        "normalizeCasing": true
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 4,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 20000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "calendar_service_unavailable",
+        "message": "Calendar service temporarily unavailable."
+      }
+    }
+  },
+  "/api/public/config": {
+    "service": "admin-config",
+    "pathRewrite": {
+      "^/api/public/config": "/api/public/config"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": false,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 3,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 15000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "public_config_unavailable",
+        "message": "Public configuration temporarily unavailable."
+      }
+    }
+  },
+  "/api/admin/config": {
+    "service": "admin-config",
+    "pathRewrite": {
+      "^/api/admin/config": "/api/admin/config"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": false,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 3,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 15000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "admin_config_unavailable",
+        "message": "Admin configuration service temporarily unavailable."
+      }
+    }
+  },
+  "/api/admin/access-control": {
+    "service": "auth",
+    "pathRewrite": {
+      "^/api/admin/access-control": "/api/admin/access-control"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": false,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 5,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 15000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "access_control_unavailable",
+        "message": "Access control service temporarily unavailable."
+      }
+    }
+  },
+  "/api/portal/admin": {
+    "service": "portal-bff",
+    "pathRewrite": {
+      "^/api/portal": "/portal"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": false,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 7,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 30000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "portal_bff_unavailable",
+        "message": "Portal backend temporarily unavailable."
+      }
+    }
+  },
+  "/api/portal": {
+    "service": "portal-bff",
+    "pathRewrite": {
+      "^/api/portal": "/portal"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": false,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 7,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 30000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "portal_bff_unavailable",
+        "message": "Portal backend temporarily unavailable."
+      }
+    }
+  },
+  "/api/sync": {
+    "service": "sync",
+    "pathRewrite": {
+      "^/api/sync": "/api/sync"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": false,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 3,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 15000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "sync_service_unavailable",
+        "message": "Sync service temporarily unavailable."
+      }
+    }
+  },
+  "/api/admin/docker": {
+    "service": "docker-manager",
+    "pathRewrite": {
+      "^/api/admin/docker": "/api/admin/docker"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": false,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 7,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 30000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "docker_manager_unavailable",
+        "message": "Docker management service temporarily unavailable."
+      }
+    }
+  },
+  "/api/admin/database": {
+    "service": "admin-database",
+    "pathRewrite": {
+      "^/api/admin/database": "/api/admin/database"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": false,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 3,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 15000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "admin_database_unavailable",
+        "message": "Admin database service temporarily unavailable."
+      }
+    }
+  },
+  "/api/admin/system": {
+    "service": "docker-manager",
+    "pathRewrite": {
+      "^/api/admin/system": "/api/admin/system"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": false,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 7,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 30000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "system_metrics_unavailable",
+        "message": "System metrics service temporarily unavailable."
+      }
+    }
+  },
+  "/api/admin/logs": {
+    "service": "logs",
+    "pathRewrite": {
+      "^/api/admin/logs": "/api/admin/logs"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": false,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 3,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 15000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "logs_service_unavailable",
+        "message": "Logs service temporarily unavailable."
+      }
+    }
+  },
+  "/api/license": {
+    "service": "license",
+    "pathRewrite": {
+      "^/api/license": "/api/license"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": true,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 5,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 15000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "license_service_unavailable",
+        "message": "License service temporarily unavailable."
+      }
+    }
+  },
+  "/api/support": {
+    "service": "support",
+    "pathRewrite": {
+      "^/api/support": "/api/support"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": true,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 5,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 15000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "support_service_unavailable",
+        "message": "Support service temporarily unavailable."
+      }
+    }
+  },
+  "/api/admin/prompts": {
+    "service": "summaries",
+    "pathRewrite": {
+      "^/api/admin/prompts": "/api/admin/prompts"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": true,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 5,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 15000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "prompts_service_unavailable",
+        "message": "Prompt management service temporarily unavailable."
+      }
+    }
+  },
+  "/api/summaries": {
+    "service": "summaries",
+    "pathRewrite": {
+      "^/api/summaries": "/api/summaries"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": true,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 5,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 15000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "summaries_service_unavailable",
+        "message": "Summaries service temporarily unavailable."
+      }
+    }
+  },
+  "/api/internal": {
+    "service": "portal-bff",
+    "pathRewrite": {
+      "^/api/internal": "/internal"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": false
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": false,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 5,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 15000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "internal_api_unavailable",
+        "message": "Internal API temporarily unavailable."
+      }
+    }
+  },
+  "/api/email": {
+    "service": "email",
+    "pathRewrite": {
+      "^/api/email": "/api/email"
+    },
+    "transformations": {
+      "request": {
+        "enrichContext": true
+      },
+      "response": {
+        "filterSensitive": false,
+        "normalizeDates": false,
+        "normalizeCasing": false
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 5,
+      "successThreshold": 2,
+      "cooldownPeriodMs": 15000,
+      "fallbackStatus": 503,
+      "fallbackBody": {
+        "error": "email_service_unavailable",
+        "message": "Email service temporarily unavailable."
+      }
+    }
+  }
+}

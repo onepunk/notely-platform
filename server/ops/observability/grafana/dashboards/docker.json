@@ -1,0 +1,911 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "panels": [],
+      "title": "Core Services",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 0, "y": 1 },
+      "id": 10,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-auth-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "auth",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 2, "y": 1 },
+      "id": 11,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-gateway-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "gateway",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 4, "y": 1 },
+      "id": 12,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-portal-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "portal",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 6, "y": 1 },
+      "id": 13,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-portal-bff-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "portal-bff",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 8, "y": 1 },
+      "id": 14,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-users-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "users",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 10, "y": 1 },
+      "id": 15,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-sync-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "sync",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 12, "y": 1 },
+      "id": 16,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-license-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "license",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 14, "y": 1 },
+      "id": 17,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-calendar-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "calendar",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 16, "y": 1 },
+      "id": 18,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-summaries-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "summaries",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 18, "y": 1 },
+      "id": 19,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-support-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "support",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 20, "y": 1 },
+      "id": 20,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-ws-gateway-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "ws-gateway",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 22, "y": 1 },
+      "id": 21,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-admin-config-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "admin-config",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 0, "y": 3 },
+      "id": 22,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-admin-database-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "admin-db",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 2, "y": 3 },
+      "id": 23,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-llm-gateway-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "llm-gw",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 4, "y": 3 },
+      "id": 24,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-llm-worker-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "llm-worker",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 6, "y": 3 },
+      "id": 25,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-docker-manager-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "docker-mgr",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 2,
+      "panels": [],
+      "title": "Infrastructure & Data",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 0, "y": 6 },
+      "id": 30,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-postgres-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "postgres",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 2, "y": 6 },
+      "id": 31,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-redis-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "redis",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 4, "y": 6 },
+      "id": 32,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-rabbitmq-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "rabbitmq",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 6, "y": 6 },
+      "id": 33,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-nginx-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "nginx",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 8, "y": 6 },
+      "id": 34,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-crowdsec-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "crowdsec",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 8 },
+      "id": 3,
+      "panels": [],
+      "title": "Observability Stack",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 0, "y": 9 },
+      "id": 40,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-grafana-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "grafana",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 2, "y": 9 },
+      "id": 41,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-prometheus-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "prometheus",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 4, "y": 9 },
+      "id": 42,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-loki-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "loki",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 6, "y": 9 },
+      "id": 43,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-promtail-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "promtail",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 8, "y": 9 },
+      "id": 44,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-cadvisor-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "cadvisor",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 10, "y": 9 },
+      "id": 45,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-node-exporter-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "node-exp",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 12, "y": 9 },
+      "id": 46,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-nginx-exporter-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "nginx-exp",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 14, "y": 9 },
+      "id": 47,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-logs-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "logs",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
+            { "options": { "from": 1, "result": { "color": "green", "text": "UP" }, "to": 999999999999 }, "type": "range" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 2, "x": 16, "y": 9 },
+      "id": 48,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "10.3.1",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus-notely" }, "expr": "count(container_last_seen{name=\"notely-docker-proxy-v3\"}) or vector(0)", "refId": "A" }],
+      "title": "docker-proxy",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 11 },
+      "id": 4,
+      "panels": [],
+      "title": "Container Resources",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.3.1",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+          "expr": "sum(rate(container_cpu_usage_seconds_total{name=~\"notely-.*\"}[5m])) by (name) * 100",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Container CPU Usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 6,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.3.1",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+          "expr": "sum by (name)(container_memory_usage_bytes{name=~\"notely-.*\"})",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Container Memory Usage",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "id": 7,
+      "panels": [],
+      "title": "Container Network & Uptime",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "Bps"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byRegexp", "options": ".*TX.*" },
+            "properties": [{ "id": "custom.transform", "value": "negative-Y" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 21 },
+      "id": 8,
+      "options": {
+        "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.3.1",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+          "expr": "sum(rate(container_network_receive_bytes_total{name=~\"notely-.*\"}[5m])) by (name)",
+          "legendFormat": "{{name}} RX",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+          "expr": "sum(rate(container_network_transmit_bytes_total{name=~\"notely-.*\"}[5m])) by (name)",
+          "legendFormat": "{{name}} TX",
+          "refId": "B"
+        }
+      ],
+      "title": "Container Network I/O",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+      "description": "How long each container has been running since last start.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 300 },
+              { "color": "green", "value": 3600 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 21 },
+      "id": 9,
+      "options": {
+        "displayMode": "gradient",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.3.1",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-notely" },
+          "expr": "max by (name)(time() - container_start_time_seconds{name=~\"notely-.*\"})",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Container Uptime",
+      "type": "bargauge"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["notely", "docker", "containers"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Docker Containers",
+  "uid": "notely-docker",
+  "version": 1,
+  "weekStart": ""
+}

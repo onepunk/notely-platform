@@ -1,0 +1,220 @@
+# Notely Platform - Docker Image Build Workflow
+# =============================================
+# Builds and pushes versioned Docker images to Docker Registry
+#
+# Triggers:
+#   - On push to master with VERSION file changes
+#   - On version tags (platform-v*)
+#   - Manual workflow dispatch
+#
+# Images are tagged with the version from VERSION file:
+#   <your-registry>/notely/gateway:3.1.0
+#
+
+name: Build Docker Images
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'server/VERSION'
+      - 'server/services/**'
+      - 'server/packages/**'
+      - 'server/shared/**'
+    tags:
+      - 'platform-v*'
+
+  workflow_dispatch:
+    inputs:
+      version_override:
+        description: 'Version to use (leave empty to use VERSION file)'
+        required: false
+        type: string
+      push_images:
+        description: 'Push images to registry'
+        required: false
+        type: boolean
+        default: true
+
+env:
+  # Docker Registry URL - can be self-hosted or Docker Hub
+  # Self-hosted: <your-registry>
+  # Docker Hub: docker.io
+  REGISTRY: ${{ vars.DOCKER_REGISTRY }}
+  IMAGE_PREFIX: notely
+
+jobs:
+  # Determine version and setup build matrix
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      services: ${{ steps.services.outputs.matrix }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ -n "${{ inputs.version_override }}" ]]; then
+            VERSION="${{ inputs.version_override }}"
+          elif [[ "${{ github.ref_type }}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#platform-v}"
+          else
+            VERSION=$(cat server/VERSION | tr -d '[:space:]')
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Building version: ${VERSION}"
+
+      - name: Generate service matrix
+        id: services
+        run: |
+          # Find all services with Dockerfiles
+          SERVICES=$(find server/services -name Dockerfile -exec dirname {} \; | \
+                     xargs -I{} basename {} | \
+                     jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "matrix=${SERVICES}" >> $GITHUB_OUTPUT
+          echo "Services to build: ${SERVICES}"
+
+  # Build and push service images
+  build-services:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.setup.outputs.services) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
+          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}
+          tags: |
+            type=raw,value=${{ needs.setup.outputs.version }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=sha,prefix=sha-
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: server
+          file: server/services/${{ matrix.service }}/Dockerfile
+          push: ${{ github.event_name != 'pull_request' && (inputs.push_images != false) }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ needs.setup.outputs.version }}
+
+  # Build infrastructure images (llm-gateway, etc.)
+  build-infrastructure:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: llm-gateway
+            context: server/infrastructure/llm-gateway
+            dockerfile: server/infrastructure/llm-gateway/Dockerfile
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
+          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+
+      - name: Build and push ${{ matrix.name }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: ${{ github.event_name != 'pull_request' && (inputs.push_images != false) }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:${{ needs.setup.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Create release manifest
+  create-manifest:
+    needs: [setup, build-services, build-infrastructure]
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag' || github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate manifest
+        run: |
+          VERSION="${{ needs.setup.outputs.version }}"
+          TIMESTAMP=$(date -Iseconds)
+
+          cat > release-manifest.json << EOF
+          {
+            "version": "${VERSION}",
+            "build_timestamp": "${TIMESTAMP}",
+            "git_sha": "${GITHUB_SHA}",
+            "git_ref": "${GITHUB_REF}",
+            "registry": "${{ env.REGISTRY }}",
+            "images": {
+              "services": ${{ needs.setup.outputs.services }},
+              "infrastructure": ["llm-gateway"]
+            }
+          }
+          EOF
+
+          cat release-manifest.json
+
+      - name: Upload manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-manifest-${{ needs.setup.outputs.version }}
+          path: release-manifest.json
+
+  # Notify on completion
+  notify:
+    needs: [setup, build-services, build-infrastructure, create-manifest]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Notify success
+        if: needs.build-services.result == 'success' && needs.build-infrastructure.result == 'success'
+        run: |
+          echo "Successfully built version ${{ needs.setup.outputs.version }}"
+          # Add Slack/Teams notification here if needed
+
+      - name: Notify failure
+        if: needs.build-services.result == 'failure' || needs.build-infrastructure.result == 'failure'
+        run: |
+          echo "Build failed for version ${{ needs.setup.outputs.version }}"
+          exit 1

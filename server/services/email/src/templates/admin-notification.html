@@ -1,0 +1,11 @@
+<h1>{{#if isBeta}}New Beta Signup{{else}}New User Registration{{/if}}</h1>
+<p>{{#if isBeta}}A new user has signed up for the Notely beta programme.{{else}}A new user has registered for Notely.{{/if}}</p>
+<div class="highlight-box">
+  <p><strong>Name:</strong> {{firstName}} {{lastName}}</p>
+  <p><strong>Email:</strong> {{email}}</p>
+  {{#if role}}<p><strong>Role:</strong> {{role}}</p>{{/if}}
+  <p><strong>IP Address:</strong> {{ipAddress}}</p>
+  <p><strong>{{#if isBeta}}Signed up{{else}}Registered{{/if}}:</strong> {{timestamp}}</p>
+  {{#if userAgent}}<p><strong>User Agent:</strong> {{userAgent}}</p>{{/if}}
+</div>
+<p>You can manage {{#if isBeta}}beta users{{else}}users{{/if}} in the admin portal.</p>
